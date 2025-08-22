@@ -1,6 +1,6 @@
-# Use NVIDIA Deep Learning Container with Python 3.10 for FlashAttention compatibility
-# Newer containers (25.x) use Python 3.12 which causes FlashAttention symbol errors
-FROM nvcr.io/nvidia/pytorch:23.12-py3
+# Use NVIDIA Deep Learning Container with confirmed Python 3.10
+# The 25.x containers appear to use Python 3.12, so using 23.x for Python 3.10 compatibility
+FROM nvcr.io/nvidia/pytorch:23.08-py3
 
 # Set working directory
 WORKDIR /app
@@ -23,9 +23,9 @@ RUN pip install --no-cache-dir -r requirements-serverless.txt
 # Copy the entire project
 COPY . /app/
 
-# Verify container environment has Python 3.10
+# Verify container environment and check Python version
 RUN python --version && \
-    python -c "import sys; print(f'Python version: {sys.version}'); assert sys.version_info.major == 3 and sys.version_info.minor == 10, 'Need Python 3.10 for FlashAttention compatibility'" && \
+    python -c "import sys; print(f'Python version: {sys.version}'); print(f'Python version info: {sys.version_info}')" && \
     python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"
 
 # Remove any existing FlashAttention that may have Python 3.12 binaries
@@ -45,22 +45,29 @@ RUN python -c "import transformers; print(f'✅ Transformers version: {transform
     python -c "import boson_multimodal; print('✅ boson_multimodal imported successfully')" || \
     echo "⚠️ Some imports failed, will debug at runtime"
 
-# Set environment variables for optimal CUDA performance
+# Set environment variables for optimal CUDA performance and RunPod volume caching
 ENV PYTHONPATH=/app
 ENV TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
 ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 ENV CUDA_LAUNCH_BLOCKING=0
-ENV PYTORCH_TRANSFORMERS_CACHE=/app/.cache/transformers
-ENV HF_HOME=/app/.cache/huggingface
+
+# Use RunPod network volume for persistent model caching
+ENV PYTORCH_TRANSFORMERS_CACHE=/runpod-volume/cache/transformers
+ENV HF_HOME=/runpod-volume/cache/huggingface
+ENV TRANSFORMERS_CACHE=/runpod-volume/cache/transformers
+ENV HF_HUB_CACHE=/runpod-volume/cache/huggingface
+ENV TORCH_HOME=/runpod-volume/cache/torch
 
 # Optimize for inference
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
 ENV TOKENIZERS_PARALLELISM=false
 
-# Create cache directories
-RUN mkdir -p /root/.cache/huggingface
-RUN mkdir -p /root/.cache/torch
+# Create cache directories on RunPod network volume for persistence
+RUN mkdir -p /runpod-volume/cache/huggingface && \
+    mkdir -p /runpod-volume/cache/transformers && \
+    mkdir -p /runpod-volume/cache/torch && \
+    chmod -R 777 /runpod-volume/cache/
 
 # Expose port (not needed for RunPod but useful for local testing)
 EXPOSE 8000

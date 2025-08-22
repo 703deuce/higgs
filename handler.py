@@ -49,6 +49,16 @@ def initialize_model():
     try:
         logger.info("Initializing Higgs Audio v2 model...")
         
+        # Ensure cache directories exist on RunPod volume
+        cache_dirs = [
+            "/runpod-volume/cache/huggingface",
+            "/runpod-volume/cache/transformers", 
+            "/runpod-volume/cache/torch"
+        ]
+        for cache_dir in cache_dirs:
+            os.makedirs(cache_dir, exist_ok=True)
+            logger.info(f"Cache directory ready: {cache_dir}")
+        
         # Get model configuration from environment variables
         model_path = os.getenv("MODEL_PATH", DEFAULT_MODEL_PATH)
         audio_tokenizer_path = os.getenv("AUDIO_TOKENIZER_PATH", DEFAULT_AUDIO_TOKENIZER_PATH)
