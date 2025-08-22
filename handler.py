@@ -117,6 +117,7 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
         "system_prompt": input_data.get("system_prompt", "Generate audio following instruction."),
         "output_format": input_data.get("output_format", "wav"),  # wav, mp3, or base64
         "ref_audio_base64": input_data.get("ref_audio_base64", None),  # Reference audio for voice cloning
+        "ref_audio_text": input_data.get("ref_audio_text", None),  # Transcription of the reference audio (REQUIRED for voice cloning)
         "scene_description": input_data.get("scene_description", None),  # Scene description for context
         # Long-form generation chunking parameters
         "chunk_method": input_data.get("chunk_method", None),  # "word", "speaker", or None
@@ -155,23 +156,31 @@ def prepare_messages(validated_input: Dict[str, Any]) -> ChatMLSample:
     if validated_input["scene_description"]:
         system_content += f"\n\n<|scene_desc_start|>\n{validated_input['scene_description']}\n<|scene_desc_end|>"
     
-    # Handle reference audio if provided
-    if validated_input["ref_audio_base64"]:
-        # Add audio content to system message
-        system_message = Message(
-            role="system",
+    # Add system message
+    system_message = Message(
+        role="system",
+        content=system_content
+    )
+    messages.append(system_message)
+    
+    # Handle voice cloning with reference audio (requires both audio and transcription)
+    if validated_input["ref_audio_base64"] and validated_input["ref_audio_text"]:
+        # Voice cloning pattern (based on examples/vllm/run_chat_completion.py):
+        # 1. User message with reference audio transcription
+        ref_text_message = Message(
+            role="user",
+            content=validated_input["ref_audio_text"].strip()
+        )
+        messages.append(ref_text_message)
+        
+        # 2. Assistant message with reference audio
+        ref_audio_message = Message(
+            role="assistant",
             content=[
-                TextContent(text=system_content),
                 AudioContent(audio_url="", raw_audio=validated_input["ref_audio_base64"])
             ]
         )
-    else:
-        system_message = Message(
-            role="system",
-            content=system_content
-        )
-    
-    messages.append(system_message)
+        messages.append(ref_audio_message)
     
     # Add user message with text to generate
     user_message = Message(
@@ -244,6 +253,7 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
             "system_prompt": "Generate audio following instruction.",
             "output_format": "wav",
             "ref_audio_base64": null,
+            "ref_audio_text": null,
             "scene_description": null,
             "chunk_method": null,
             "chunk_max_word_num": 200,
@@ -252,6 +262,18 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
             "ref_audio_in_system_message": false
         }
     }
+    
+    Key Parameters:
+    - text: Text to convert to speech
+    - ref_audio_base64: Base64 encoded reference audio for voice cloning (optional)
+    - ref_audio_text: Transcription of the reference audio - REQUIRED for voice cloning when ref_audio_base64 is provided
+    - temperature: Controls randomness (0.0-2.0, default 0.7)
+    - max_new_tokens: Maximum tokens to generate (default 512)
+    - seed: Random seed for reproducible outputs (optional)
+    - output_format: "wav", "mp3", or "base64" (default "wav")
+    - scene_description: Context for scene-based generation (optional)
+    - chunk_method: "word", "speaker", or null for long-form generation
+    - ref_audio_in_system_message: Include reference audio in system message for experimental features
     
     Returns:
     {
