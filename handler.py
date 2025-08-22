@@ -117,7 +117,12 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
         "system_prompt": input_data.get("system_prompt", "Generate audio following instruction."),
         "output_format": input_data.get("output_format", "wav"),  # wav, mp3, or base64
         "ref_audio_base64": input_data.get("ref_audio_base64", None),  # Reference audio for voice cloning
-        "scene_description": input_data.get("scene_description", None)  # Scene description for context
+        "scene_description": input_data.get("scene_description", None),  # Scene description for context
+        # Long-form generation chunking parameters
+        "chunk_method": input_data.get("chunk_method", None),  # "word", "speaker", or None
+        "chunk_max_word_num": input_data.get("chunk_max_word_num", 200),  # Max words per chunk
+        "chunk_max_num_turns": input_data.get("chunk_max_num_turns", 1),  # Max turns per chunk
+        "generation_chunk_buffer_size": input_data.get("generation_chunk_buffer_size", None)  # Buffer size for chunks
     }
     
     # Validate numeric parameters
@@ -237,7 +242,11 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
             "system_prompt": "Generate audio following instruction.",
             "output_format": "wav",
             "ref_audio_base64": null,
-            "scene_description": null
+            "scene_description": null,
+            "chunk_method": null,
+            "chunk_max_word_num": 200,
+            "chunk_max_num_turns": 1,
+            "generation_chunk_buffer_size": null
         }
     }
     
