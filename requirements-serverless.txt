@@ -1,0 +1,35 @@
+# Base Higgs Audio dependencies
+descript-audio-codec
+torch>=2.0.0
+transformers>=4.45.1,<4.47.0
+librosa
+dacite
+boto3==1.35.36
+s3fs
+torchvision
+torchaudio
+json_repair
+pandas
+pydantic
+vector_quantize_pytorch
+loguru
+pydub
+omegaconf
+click
+langid
+jieba
+accelerate>=0.26.0
+
+# Additional serverless dependencies
+runpod>=1.6.0
+soundfile
+numpy
+requests
+aiohttp
+
+# Optional dependencies for better performance
+sentencepiece
+safetensors
+
+# For error tracking and monitoring (optional)
+sentry-sdk

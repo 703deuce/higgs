@@ -1,0 +1,54 @@
+# RunPod ignore file - exclude unnecessary files from deployment
+
+# Documentation and examples (keep essential ones)
+*.md
+!README_RUNPOD_DEPLOYMENT.md
+examples/
+figures/
+tech_blogs/
+
+# Development files
+.git/
+.gitignore
+.gitmodules
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+.env
+.vscode/
+.idea/
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Large files that aren't needed for inference
+*.wav
+*.mp3
+*.flac
+test_output.*
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+
+# Model cache (will be downloaded fresh)
+.cache/
+models/

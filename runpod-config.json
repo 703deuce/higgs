@@ -1,0 +1,43 @@
+{
+  "name": "higgs-audio-v2-serverless",
+  "description": "Higgs Audio V2 text-to-speech serverless endpoint",
+  "version": "1.0.0",
+  "runtime": {
+    "handler": "handler.py",
+    "function": "handler",
+    "python_version": "3.10"
+  },
+  "build": {
+    "dockerfile": "Dockerfile",
+    "requirements": "requirements-serverless.txt"
+  },
+  "hardware": {
+    "min_gpu_memory_gb": 24,
+    "min_cpu_cores": 8,
+    "min_memory_gb": 32,
+    "recommended_gpu": ["RTX A6000", "A40", "A100"]
+  },
+  "scaling": {
+    "min_workers": 0,
+    "max_workers": 3,
+    "idle_timeout": 30,
+    "request_timeout": 120
+  },
+  "environment": {
+    "MODEL_PATH": "bosonai/higgs-audio-v2-generation-3B-base",
+    "AUDIO_TOKENIZER_PATH": "bosonai/higgs-audio-v2-tokenizer",
+    "DEVICE": "cuda",
+    "PRELOAD_MODELS": "true",
+    "ENABLE_TORCH_COMPILE": "true",
+    "MAX_TEXT_LENGTH": "10000",
+    "PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:512",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "TOKENIZERS_PARALLELISM": "false"
+  },
+  "health_check": {
+    "endpoint": "/health",
+    "timeout": 30,
+    "interval": 60
+  }
+}
