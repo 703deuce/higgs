@@ -1,6 +1,6 @@
-# Use the NVIDIA PyTorch container recommended for AI workloads
-# This should have compatible CUDA/PyTorch versions for FlashAttention
-FROM nvcr.io/nvidia/pytorch:24.02-py3
+# Use NVIDIA Deep Learning Container verified by Higgs Audio team
+# This container has the correct CUDA/PyTorch/Python environment for FlashAttention
+FROM nvcr.io/nvidia/pytorch:25.02-py3
 
 # Set working directory
 WORKDIR /app
@@ -17,19 +17,23 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better Docker layer caching
 COPY requirements-serverless.txt /app/requirements-serverless.txt
 
-# Install Python dependencies
+# Install base Python dependencies (without FlashAttention yet)
 RUN pip install --no-cache-dir -r requirements-serverless.txt
 
 # Copy the entire project
 COPY . /app/
 
+# Verify the verified container environment
+RUN python --version && \
+    python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')" && \
+    python -c "import sys; print(f'Python version: {sys.version}')"
+
 # Install the project in development mode
 RUN pip install --no-cache-dir -e . && \
     pip install --no-cache-dir --upgrade setuptools wheel
 
-# Verify installation and check for CUDA compatibility issues
-RUN python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')" && \
-    python -c "import transformers; print(f'Transformers version: {transformers.__version__}')" && \
+# Verify installation with the verified container environment
+RUN python -c "import transformers; print(f'✅ Transformers version: {transformers.__version__}')" && \
     python -c "import boson_multimodal; print('✅ boson_multimodal imported successfully')" || \
     echo "⚠️ boson_multimodal import failed, will debug at runtime"
 
