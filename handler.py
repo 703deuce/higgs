@@ -122,7 +122,9 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
         "chunk_method": input_data.get("chunk_method", None),  # "word", "speaker", or None
         "chunk_max_word_num": input_data.get("chunk_max_word_num", 200),  # Max words per chunk
         "chunk_max_num_turns": input_data.get("chunk_max_num_turns", 1),  # Max turns per chunk
-        "generation_chunk_buffer_size": input_data.get("generation_chunk_buffer_size", None)  # Buffer size for chunks
+        "generation_chunk_buffer_size": input_data.get("generation_chunk_buffer_size", None),  # Buffer size for chunks
+        # Experimental features
+        "ref_audio_in_system_message": input_data.get("ref_audio_in_system_message", False)  # Include ref audio description in system message
     }
     
     # Validate numeric parameters
@@ -246,7 +248,8 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
             "chunk_method": null,
             "chunk_max_word_num": 200,
             "chunk_max_num_turns": 1,
-            "generation_chunk_buffer_size": null
+            "generation_chunk_buffer_size": null,
+            "ref_audio_in_system_message": false
         }
     }
     
