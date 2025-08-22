@@ -4,6 +4,7 @@ Provides a serverless API endpoint for audio generation using Higgs Audio v2 mod
 """
 
 import os
+import sys
 import base64
 import torch
 import numpy as np
@@ -14,9 +15,20 @@ import json
 import traceback
 from loguru import logger
 
+# Add the app directory to Python path to ensure imports work
+sys.path.insert(0, '/app')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 # Higgs Audio imports
-from boson_multimodal.serve.serve_engine import HiggsAudioServeEngine, HiggsAudioResponse
-from boson_multimodal.data_types import Message, ChatMLSample, AudioContent, TextContent
+try:
+    from boson_multimodal.serve.serve_engine import HiggsAudioServeEngine, HiggsAudioResponse
+    from boson_multimodal.data_types import Message, ChatMLSample, AudioContent, TextContent
+except ImportError as e:
+    logger.error(f"Failed to import Higgs Audio modules: {e}")
+    logger.error("Available paths:")
+    for path in sys.path:
+        logger.error(f"  - {path}")
+    raise
 
 # Global variables for model persistence across invocations
 MODEL_ENGINE = None

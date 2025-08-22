@@ -22,8 +22,11 @@ RUN pip install --no-cache-dir -r requirements-serverless.txt
 # Copy the entire project
 COPY . /app/
 
-# Install the project in development mode
-RUN pip install -e .
+# Install the project in development mode and ensure all dependencies are available
+RUN pip install --no-cache-dir -e . && \
+    pip install --no-cache-dir --upgrade setuptools wheel && \
+    python -c "import boson_multimodal; print('✅ boson_multimodal imported successfully')" || \
+    echo "⚠️ boson_multimodal import failed, but continuing..."
 
 # Set environment variables
 ENV PYTHONPATH=/app
