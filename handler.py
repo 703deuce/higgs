@@ -291,6 +291,22 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
             validated_input["output_format"]
         )
         
+        # ALSO save audio to network volume for easy access
+        try:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            volume_filename = f"/runpod-volume/generated_audio_{timestamp}.wav"
+            
+            if response.audio is not None:
+                # Save audio to volume as WAV file
+                import soundfile as sf
+                sf.write(volume_filename, response.audio, response.sampling_rate)
+                logger.info(f"Audio also saved to volume: {volume_filename}")
+                audio_output["volume_file"] = volume_filename
+                audio_output["access_note"] = "Audio saved to /runpod-volume/ for easy access"
+        except Exception as e:
+            logger.warning(f"Failed to save to volume: {e}")
+
         # Prepare final response
         result = {
             **audio_output,
