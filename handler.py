@@ -329,15 +329,8 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         }
 
 # For local testing
+import runpod
+
 if __name__ == "__main__":
-    # Test the handler locally
-    test_event = {
-        "input": {
-            "text": "Hello, this is a test of the Higgs Audio v2 model running on RunPod!",
-            "temperature": 0.3,
-            "max_new_tokens": 256
-        }
-    }
-    
-    result = handler(test_event)
-    print(json.dumps(result, indent=2))
+    # Start the RunPod serverless handler
+    runpod.serverless.start({"handler": handler})
