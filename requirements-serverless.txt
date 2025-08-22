@@ -1,6 +1,6 @@
-# Base Higgs Audio dependencies
+# Base Higgs Audio dependencies (matching original requirements.txt)
 descript-audio-codec
-torch>=2.0.0
+torch
 transformers>=4.45.1,<4.47.0
 librosa
 dacite

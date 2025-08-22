@@ -1,5 +1,6 @@
-# Use NVIDIA's PyTorch image with CUDA support
-FROM nvcr.io/nvidia/pytorch:24.12-py3
+# Use the NVIDIA PyTorch container recommended for AI workloads
+# This should have compatible CUDA/PyTorch versions for FlashAttention
+FROM nvcr.io/nvidia/pytorch:24.02-py3
 
 # Set working directory
 WORKDIR /app
@@ -22,16 +23,23 @@ RUN pip install --no-cache-dir -r requirements-serverless.txt
 # Copy the entire project
 COPY . /app/
 
-# Install the project in development mode and ensure all dependencies are available
+# Install the project in development mode
 RUN pip install --no-cache-dir -e . && \
-    pip install --no-cache-dir --upgrade setuptools wheel && \
-    python -c "import boson_multimodal; print('✅ boson_multimodal imported successfully')" || \
-    echo "⚠️ boson_multimodal import failed, but continuing..."
+    pip install --no-cache-dir --upgrade setuptools wheel
 
-# Set environment variables
+# Verify installation and check for CUDA compatibility issues
+RUN python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')" && \
+    python -c "import transformers; print(f'Transformers version: {transformers.__version__}')" && \
+    python -c "import boson_multimodal; print('✅ boson_multimodal imported successfully')" || \
+    echo "⚠️ boson_multimodal import failed, will debug at runtime"
+
+# Set environment variables for optimal CUDA performance
 ENV PYTHONPATH=/app
 ENV TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.9;9.0"
 ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+ENV CUDA_LAUNCH_BLOCKING=0
+ENV PYTORCH_TRANSFORMERS_CACHE=/app/.cache/transformers
+ENV HF_HOME=/app/.cache/huggingface
 
 # Optimize for inference
 ENV OMP_NUM_THREADS=1
