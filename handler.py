@@ -156,31 +156,49 @@ def prepare_messages(validated_input: Dict[str, Any]) -> ChatMLSample:
     if validated_input["scene_description"]:
         system_content += f"\n\n<|scene_desc_start|>\n{validated_input['scene_description']}\n<|scene_desc_end|>"
     
-    # Add system message
-    system_message = Message(
-        role="system",
-        content=system_content
-    )
-    messages.append(system_message)
-    
-    # Handle voice cloning with reference audio (requires both audio and transcription)
+    # Handle reference audio based on experimental vs voice cloning mode
     if validated_input["ref_audio_base64"] and validated_input["ref_audio_text"]:
-        # Voice cloning pattern (based on examples/vllm/run_chat_completion.py):
-        # 1. User message with reference audio transcription
-        ref_text_message = Message(
-            role="user",
-            content=validated_input["ref_audio_text"].strip()
+        if validated_input["ref_audio_in_system_message"]:
+            # Experimental features pattern: Include reference audio in system message
+            system_message = Message(
+                role="system",
+                content=[
+                    TextContent(text=system_content),
+                    AudioContent(audio_url="", raw_audio=validated_input["ref_audio_base64"])
+                ]
+            )
+            messages.append(system_message)
+        else:
+            # Voice cloning pattern (based on examples/vllm/run_chat_completion.py):
+            # Add system message first
+            system_message = Message(
+                role="system", 
+                content=system_content
+            )
+            messages.append(system_message)
+            
+            # 1. User message with reference audio transcription
+            ref_text_message = Message(
+                role="user",
+                content=validated_input["ref_audio_text"].strip()
+            )
+            messages.append(ref_text_message)
+            
+            # 2. Assistant message with reference audio
+            ref_audio_message = Message(
+                role="assistant",
+                content=[
+                    AudioContent(audio_url="", raw_audio=validated_input["ref_audio_base64"])
+                ]
+            )
+            messages.append(ref_audio_message)
+    else:
+        # No reference audio - just add system message
+        system_message = Message(
+            role="system",
+            content=system_content
         )
-        messages.append(ref_text_message)
-        
-        # 2. Assistant message with reference audio
-        ref_audio_message = Message(
-            role="assistant",
-            content=[
-                AudioContent(audio_url="", raw_audio=validated_input["ref_audio_base64"])
-            ]
-        )
-        messages.append(ref_audio_message)
+        messages.append(system_message)
     
     # Add user message with text to generate
     user_message = Message(
