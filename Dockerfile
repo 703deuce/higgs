@@ -20,7 +20,7 @@ COPY requirements-serverless.txt /app/requirements-serverless.txt
 # Install base Python dependencies (without FlashAttention yet)
 RUN pip install --no-cache-dir -r requirements-serverless.txt
 
-# Copy the entire project
+# Copy the entire project (including updated voice prompts)
 COPY . /app/
 
 # Verify container environment and check Python version
