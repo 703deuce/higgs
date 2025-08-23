@@ -1,0 +1,430 @@
+AI SAAS VOICE COLLECTION - MASTER LIST
+============================================================
+Generated: 2025-08-23 16:19:02
+Total Voices: 94
+============================================================
+
+
+Narration & Audiobook (1-5)
+---------------------------
+  1. Sophia_British_Narrator
+     File: Sophia_British_Narrator.mp3
+     Description: Warm, friendly female voice with a slight British accent, moderately fast, perfect for audiobook narration.
+
+  2. Marcus_Bedtime_Storyteller
+     File: Marcus_Bedtime_Storyteller.mp3
+     Description: Deep, soothing male voice with a neutral American accent, slow pace, ideal for bedtime stories.
+
+  3. Eileen_Irish_Grandmother
+     File: Eileen_Irish_Grandmother.mp3
+     Description: Soft-spoken elderly woman with gentle Irish lilt, slow and tender, suited for children's books.
+
+  4. Hamish_Scottish_Fantasy
+     File: Hamish_Scottish_Fantasy.mp3
+     Description: Lively Scottish male voice, energetic and quick, for fantasy tales.
+
+  5. Olivia_Australian_Educator
+     File: Olivia_Australian_Educator.mp3
+     Description: Clear, engaging young woman with Australian accent, average speed, for non-fiction narration.
+
+
+Documentary & Announcer (6-10)
+------------------------------
+  6. David_Documentary_Voice
+     File: David_Documentary_Voice.mp3
+     Description: Deep, authoritative male voice with confidence and gravitas, steady pace, ideal for documentary voiceovers.
+
+  7. Rachel_News_Reporter
+     File: Rachel_News_Reporter.mp3
+     Description: Bright, articulate female voice with midwestern US accent, fast-paced, for news reporting.
+
+  8. Winston_History_Narrator
+     File: Winston_History_Narrator.mp3
+     Description: Mature, formal British male, with RP accent, poised and measured, suited for history documentaries.
+
+  9. Victoria_Breaking_News
+     File: Victoria_Breaking_News.mp3
+     Description: Determined, no-nonsense American woman, rapid delivery, for breaking news updates.
+
+ 10. Connor_Nature_Guide
+     File: Connor_Nature_Guide.mp3
+     Description: Resonant Canadian male, calm and unhurried, for nature documentaries.
+
+
+Educational & Instructional (11-15)
+-----------------------------------
+ 11. Emma_Educational_Coach
+     File: Emma_Educational_Coach.mp3
+     Description: Cheerful, energetic young voice with enthusiasm and clarity, moderate speed, great for educational content.
+
+ 12. Priya_Indian_Teacher
+     File: Priya_Indian_Teacher.mp3
+     Description: Clear-spoken Indian female teacher, warm tone, steady pace, ideal for e-learning.
+
+ 13. Hiroshi_Japanese_Instructor
+     File: Hiroshi_Japanese_Instructor.mp3
+     Description: Patient, friendly Japanese male educator, coaching tone, moderate speed.
+
+ 14. Tyler_STEM_Explainer
+     File: Tyler_STEM_Explainer.mp3
+     Description: Animated US teen, upbeat and lively, quick delivery, for STEM explainer videos.
+
+ 15. Margaret_British_Tutor
+     File: Margaret_British_Tutor.mp3
+     Description: Encouraging older female instructor, gentle British accent, slow to moderate speed.
+
+
+Corporate & Professional (16-20)
+--------------------------------
+ 16. James_Corporate_Executive
+     File: James_Corporate_Executive.mp3
+     Description: Confident American male executive, persuasive tone, moderately fast, for corporate presentations.
+
+ 17. Ingrid_German_Professional
+     File: Ingrid_German_Professional.mp3
+     Description: Sleek, professional German woman, precise diction, brisk speed, for business narration.
+
+ 18. Nomsa_South_African_HR
+     File: Nomsa_South_African_HR.mp3
+     Description: Warm, accepting HR manager voice, South African accent, moderate and friendly.
+
+ 19. Wei_Singapore_Analyst
+     File: Wei_Singapore_Analyst.mp3
+     Description: Clear, analytical Singaporean male, sharp delivery, for finance briefings.
+
+ 20. Camille_French_Entrepreneur
+     File: Camille_French_Entrepreneur.mp3
+     Description: Assertive French female, expressive and inspiring, for entrepreneurship podcasts.
+
+
+Conversational & Customer Service (21-25)
+-----------------------------------------
+ 21. Ashley_Customer_Service
+     File: Ashley_Customer_Service.mp3
+     Description: Friendly, helpful US female, varied energy, fast-paced for customer service.
+
+ 22. Oliver_British_Support
+     File: Oliver_British_Support.mp3
+     Description: Calm British male, patient and measured, for support interactions.
+
+ 23. Maria_Filipino_Agent
+     File: Maria_Filipino_Agent.mp3
+     Description: Lively Filipino woman, enthusiastic, moderate speed for call center use.
+
+ 24. Dr_Robert_Medical_Advisor
+     File: Dr_Robert_Medical_Advisor.mp3
+     Description: Gentle, empathetic elderly man, slow pace, perfect for medical advice lines.
+
+ 25. Isabella_Brazilian_Travel
+     File: Isabella_Brazilian_Travel.mp3
+     Description: Youthful, clear Brazilian woman, energetic, for travel booking.
+
+
+Expressiveness & Acting Styles (26-30)
+--------------------------------------
+ 26. Giovanni_Italian_Actor
+     File: Giovanni_Italian_Actor.mp3
+     Description: Dramatic Italian male, theatrical, energetic and intense, for monologue acting.
+
+ 27. Celeste_French_Performer
+     File: Celeste_French_Performer.mp3
+     Description: Playful French female, animated and charming, swift delivery for children's entertainment.
+
+ 28. Samantha_Sarcastic_Host
+     File: Samantha_Sarcastic_Host.mp3
+     Description: Sarcastic, witty American woman, lively, fast-paced, for satirical podcasts.
+
+ 29. Dmitri_Russian_Philosopher
+     File: Dmitri_Russian_Philosopher.mp3
+     Description: Thoughtful Russian male, introspective tone, slow and contemplative.
+
+ 30. Carmen_Spanish_Celebrant
+     File: Carmen_Spanish_Celebrant.mp3
+     Description: Excited Spanish woman, rapid, passionate, for celebration scenarios.
+
+
+Elderly Voices (36-40)
+----------------------
+ 36. Grandpa_William_Wise
+     File: Grandpa_William_Wise.mp3
+     Description: Wise, kind elderly male, slow and reassuring, classic US accent.
+
+ 37. Nana_Irish_Storyteller
+     File: Nana_Irish_Storyteller.mp3
+     Description: Grandmotherly Irish woman, warm, gentle, and measured.
+
+ 38. Heinrich_German_Elder
+     File: Heinrich_German_Elder.mp3
+     Description: Strong elderly German man, clear and deliberate, slow pace.
+
+ 39. Astrid_Danish_Comfort
+     File: Astrid_Danish_Comfort.mp3
+     Description: Soft Danish woman, comforting, moderate speed.
+
+ 40. Angus_Scottish_Grandpa
+     File: Angus_Scottish_Grandpa.mp3
+     Description: Jovial Scottish grandfather, robust and fast-paced.
+
+
+Global Accents (41-50)
+----------------------
+ 41. Raj_Indian_Tech_Support
+     File: Raj_Indian_Tech_Support.mp3
+     Description: Upbeat Indian male, clear, energetic, for tech support.
+
+ 42. Adanna_Nigerian_Speaker
+     File: Adanna_Nigerian_Speaker.mp3
+     Description: Calm Nigerian female, expressive, moderate speed.
+
+ 43. Chen_Chinese_Instructor
+     File: Chen_Chinese_Instructor.mp3
+     Description: Animated Chinese male, lively, varied pace, for instruction.
+
+ 44. Katya_Russian_Professional
+     File: Katya_Russian_Professional.mp3
+     Description: Enthusiastic Russian female, precise, moderately fast.
+
+ 45. Diego_Mexican_Guide
+     File: Diego_Mexican_Guide.mp3
+     Description: Friendly Mexican male, bright, brisk speed.
+
+ 46. Min_Korean_Confident
+     File: Min_Korean_Confident.mp3
+     Description: Assertive Korean woman, quick, confident tone.
+
+ 47. Lars_Swedish_Calm
+     File: Lars_Swedish_Calm.mp3
+     Description: Gentle Swedish man, relaxed, slow pace.
+
+ 48. Sophia_Greek_Spirited
+     File: Sophia_Greek_Spirited.mp3
+     Description: Spirited Greek woman, melodic, rapid-fire delivery.
+
+ 49. Omar_Arabic_Professional
+     File: Omar_Arabic_Professional.mp3
+     Description: Neutral Arabic male, professional, moderate speed.
+
+ 50. Ayse_Turkish_Energetic
+     File: Ayse_Turkish_Energetic.mp3
+     Description: Energetic Turkish female, lively, moderately fast.
+
+
+Specialized Occupations (51-60)
+-------------------------------
+ 51. Anderson_News_Anchor
+     File: Anderson_News_Anchor.mp3
+     Description: Serious news anchor (male), authoritative, quick, US accent.
+
+ 52. Dr_Sarah_Psychologist
+     File: Dr_Sarah_Psychologist.mp3
+     Description: Calm psychologist (female), soothing, slow, empathetic tone.
+
+ 53. Mike_Sports_Commentator
+     File: Mike_Sports_Commentator.mp3
+     Description: Animated sports commentator (male), lively, rapid for play-by-play.
+
+ 54. Nurse_Jennifer_Caring
+     File: Nurse_Jennifer_Caring.mp3
+     Description: Caring nurse (female), gentle, reassuring, moderate speed.
+
+ 55. Zoe_Travel_Vlogger
+     File: Zoe_Travel_Vlogger.mp3
+     Description: Excited travel vlogger (female), upbeat, varied tempo.
+
+ 56. Professor_Cambridge_Scientist
+     File: Professor_Cambridge_Scientist.mp3
+     Description: Analytical scientist (male), precise, moderately fast, British accent.
+
+ 57. Luna_Creative_Artist
+     File: Luna_Creative_Artist.mp3
+     Description: Creative artist (female), expressive, passionate, moderate speed.
+
+ 58. Chef_Antonio_Italian
+     File: Chef_Antonio_Italian.mp3
+     Description: Fun chef (male), playful, dynamic, Italian accent.
+
+ 59. Coach_Michelle_Inspiring
+     File: Coach_Michelle_Inspiring.mp3
+     Description: Inspiring coach (female), energizing, quick, American accent.
+
+ 60. Barrister_James_Australian
+     File: Barrister_James_Australian.mp3
+     Description: Keen lawyer (male), serious, measured, Australian accent.
+
+
+Age & Energy Variety (61-65)
+----------------------------
+ 61. Jake_Laid_Back_Millennial
+     File: Jake_Laid_Back_Millennial.mp3
+     Description: Young adult male, laid-back, casual, slightly slower.
+
+ 62. Chloe_Bubbly_Young_Adult
+     File: Chloe_Bubbly_Young_Adult.mp3
+     Description: Young adult female, bubbly and energetic, punctual.
+
+ 63. Richard_Middle_Aged_Steady
+     File: Richard_Middle_Aged_Steady.mp3
+     Description: Middle-aged male, mature, steady pace, American accent.
+
+ 64. Patricia_Reserved_Professional
+     File: Patricia_Reserved_Professional.mp3
+     Description: Middle-aged female, reserved, knowledgeable, moderate speed.
+
+ 65. Edgar_Contemplative_Elder
+     File: Edgar_Contemplative_Elder.mp3
+     Description: Elderly male, contemplative, slow, poetic delivery.
+
+
+Over-the-Top & Comic (66-70)
+----------------------------
+ 66. Villain_Maximilian_Dark
+     File: Villain_Maximilian_Dark.mp3
+     Description: Cartoon villain voice (male), exaggerated, deep, rapid-fire.
+
+ 67. Giggles_Comic_Relief
+     File: Giggles_Comic_Relief.mp3
+     Description: Comic relief (female), high-pitched, energetic, playful.
+
+ 68. AIDEN_Robot_Voice
+     File: AIDEN_Robot_Voice.mp3
+     Description: Robot voice (neutral), synthetic, consistent fast, monotone.
+
+ 69. Lyralei_Fantasy_Elf
+     File: Lyralei_Fantasy_Elf.mp3
+     Description: Fantasy elf (female), melodic, moderate speed.
+
+ 70. Captain_Blackbeard_Pirate
+     File: Captain_Blackbeard_Pirate.mp3
+     Description: Pirate voice (male), raspy, lively, quick tempo.
+
+
+Podcast Hosts (71-75)
+---------------------
+ 71. Ryan_Lifestyle_Host
+     File: Ryan_Lifestyle_Host.mp3
+     Description: Friendly male host, comfortable pace, engaging tone, for lifestyle podcasts.
+
+ 72. Jess_Comedy_Podcaster
+     File: Jess_Comedy_Podcaster.mp3
+     Description: Sarcastic female host, witty, brisk, for comedy podcasts.
+
+ 73. Alex_Chill_Teen_Host
+     File: Alex_Chill_Teen_Host.mp3
+     Description: Chill teen host, relaxed, conversational, moderate speed.
+
+ 74. Brad_Sports_Enthusiast
+     File: Brad_Sports_Enthusiast.mp3
+     Description: Energetic sports host (male), excited, fast-paced.
+
+ 75. Sophia_Culture_Critic
+     File: Sophia_Culture_Critic.mp3
+     Description: Thoughtful culture host (female), reflective, slow to moderate.
+
+
+Music-Related (76-80)
+---------------------
+ 76. Melody_Pop_Singer
+     File: Melody_Pop_Singer.mp3
+     Description: Pop singer (female), expressive, dynamic, for lyric breakdowns.
+
+ 77. Maestro_Classical_Voice
+     File: Maestro_Classical_Voice.mp3
+     Description: Classical singer (male), warm, controlled, slow.
+
+ 78. Rex_Rock_Vocalist
+     File: Rex_Rock_Vocalist.mp3
+     Description: Rock band member (male), gritty, energetic, fast.
+
+ 79. Jazz_Velvet_Crooner
+     File: Jazz_Velvet_Crooner.mp3
+     Description: Jazz crooner (female), smooth, playful, moderate.
+
+ 80. Aria_Opera_Narrator
+     File: Aria_Opera_Narrator.mp3
+     Description: Opera narrator (male), dramatic, slow and expressive.
+
+
+Emotion Profiles (81-90)
+------------------------
+ 81. Joy_Bubbly_Energy
+     File: Joy_Bubbly_Energy.mp3
+     Description: Joyful, bubbly young woman, fast, high energy.
+
+ 82. Melvin_Sorrowful_Gentle
+     File: Melvin_Sorrowful_Gentle.mp3
+     Description: Sorrowful, soft-spoken elderly man, slow, gentle.
+
+ 83. Victor_Angry_Forceful
+     File: Victor_Angry_Forceful.mp3
+     Description: Angry middle-aged male, forceful, brisk.
+
+ 84. Nervous_Nellie_Anxious
+     File: Nervous_Nellie_Anxious.mp3
+     Description: Nervous young female, shaky, quick-paced.
+
+ 86. CEO_Alexander_Confident
+     File: CEO_Alexander_Confident.mp3
+     Description: Confident CEO voice (male), clear, moderate, inspiring.
+
+ 87. Grandma_Rose_Loving
+     File: Grandma_Rose_Loving.mp3
+     Description: Loving grandmother voice, calm, slow pace.
+
+ 88. Student_Sam_Anxious
+     File: Student_Sam_Anxious.mp3
+     Description: Anxious student voice, rapid, uneven.
+
+ 89. Zen_Meditation_Guide
+     File: Zen_Meditation_Guide.mp3
+     Description: Peaceful meditation guide (female), slow, soothing.
+
+ 90. Thriller_Vincent_Suspense
+     File: Thriller_Vincent_Suspense.mp3
+     Description: Suspenseful thriller narrator (male), deliberate, slow.
+
+
+Commercial/Promo (91-95)
+------------------------
+ 91. Pitch_Perfect_Pete
+     File: Pitch_Perfect_Pete.mp3
+     Description: Slick advertising pitchman (male), enthusiastic, brisk, US accent.
+
+ 92. Luxury_Grace_Ambassador
+     File: Luxury_Grace_Ambassador.mp3
+     Description: Calm luxury brand ambassador (female), smooth, measured.
+
+ 93. Review_Rick_Enthusiastic
+     File: Review_Rick_Enthusiastic.mp3
+     Description: Ebullient product reviewer (male), engaging, fast-paced.
+
+ 94. Fitness_Fiona_Motivator
+     File: Fitness_Fiona_Motivator.mp3
+     Description: Aspirational fitness coach (female), motivating, dynamic.
+
+ 95. Advisor_Trust_Financial
+     File: Advisor_Trust_Financial.mp3
+     Description: Trustworthy financial advisor (male), measured, professional.
+
+
+Miscellaneous (96-100)
+----------------------
+ 96. Storyteller_Magnus_Epic
+     File: Storyteller_Magnus_Epic.mp3
+     Description: Dramatic storyteller (male), suspenseful, variable speed.
+
+ 97. Cafe_Brigitte_French
+     File: Cafe_Brigitte_French.mp3
+     Description: Charming French café server (female), warm, rhythmic.
+
+ 98. Politician_Young_Driven
+     File: Politician_Young_Driven.mp3
+     Description: Driven young politician (male), passionate, rapid.
+
+ 99. Mystic_Luna_Healer
+     File: Mystic_Luna_Healer.mp3
+     Description: Mystic healer (female), calm, slow, mysterious.
+
+100. Startup_Phoenix_Founder
+     File: Startup_Phoenix_Founder.mp3
+     Description: Tech startup founder (gender-neutral), energetic, modern, slightly fast.
+
