@@ -15,6 +15,17 @@ import time
 from typing import Dict, Any
 import soundfile as sf
 
+# Set up Hugging Face cache to use persistent volume BEFORE any imports
+os.environ["HF_HOME"] = "/runpod-volume/.huggingface"
+os.environ["TRANSFORMERS_CACHE"] = "/runpod-volume/.huggingface/transformers"
+os.environ["HF_DATASETS_CACHE"] = "/runpod-volume/.huggingface/datasets"
+os.environ["TORCH_HOME"] = "/runpod-volume/.torch"
+
+# Create cache directories if they don't exist
+os.makedirs("/runpod-volume/.huggingface/transformers", exist_ok=True)
+os.makedirs("/runpod-volume/.huggingface/datasets", exist_ok=True)
+os.makedirs("/runpod-volume/.torch", exist_ok=True)
+
 # Add the app directory to Python path for imports
 sys.path.insert(0, '/app')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -24,6 +35,11 @@ import runpod
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Log cache configuration
+logger.info(f"HF_HOME set to: {os.environ.get('HF_HOME')}")
+logger.info(f"TRANSFORMERS_CACHE set to: {os.environ.get('TRANSFORMERS_CACHE')}")
+logger.info(f"Cache directories created and ready for model persistence")
 
 def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
     """Validate and normalize input parameters"""
@@ -173,12 +189,22 @@ def run_generation(cmd: list) -> tuple:
     try:
         logger.info(f"Running command: {' '.join(cmd)}")
         
+        # Ensure subprocess inherits the cache environment variables
+        env = os.environ.copy()
+        env.update({
+            "HF_HOME": "/runpod-volume/.huggingface",
+            "TRANSFORMERS_CACHE": "/runpod-volume/.huggingface/transformers",
+            "HF_DATASETS_CACHE": "/runpod-volume/.huggingface/datasets",
+            "TORCH_HOME": "/runpod-volume/.torch"
+        })
+        
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=600,  # 10 minute timeout for long-form generation
-            cwd="/app"
+            cwd="/app",
+            env=env  # Pass the environment with cache variables
         )
         
         if result.returncode == 0:
@@ -195,6 +221,40 @@ def run_generation(cmd: list) -> tuple:
     except Exception as e:
         logger.error(f"Error running generation: {e}")
         return False, str(e)
+
+def check_cache_status() -> Dict[str, Any]:
+    """Check the status of the Hugging Face cache"""
+    cache_info = {
+        "cache_directory": "/runpod-volume/.huggingface",
+        "cache_exists": os.path.exists("/runpod-volume/.huggingface"),
+        "transformers_cache_exists": os.path.exists("/runpod-volume/.huggingface/transformers"),
+        "models_cached": []
+    }
+    
+    # Check for specific Higgs Audio models in cache
+    higgs_models = [
+        "bosonai--higgs-audio-v2-generation-3B-base",
+        "bosonai--higgs-audio-v2-tokenizer"
+    ]
+    
+    transformers_cache_dir = "/runpod-volume/.huggingface/transformers"
+    if os.path.exists(transformers_cache_dir):
+        for model_name in higgs_models:
+            model_path = os.path.join(transformers_cache_dir, model_name)
+            if os.path.exists(model_path):
+                cache_info["models_cached"].append(model_name)
+                # Get cache size
+                try:
+                    total_size = sum(
+                        os.path.getsize(os.path.join(dirpath, filename))
+                        for dirpath, dirnames, filenames in os.walk(model_path)
+                        for filename in filenames
+                    )
+                    cache_info[f"{model_name}_size_mb"] = round(total_size / (1024 * 1024), 2)
+                except Exception as e:
+                    logger.warning(f"Could not calculate size for {model_name}: {e}")
+    
+    return cache_info
 
 def cleanup_temp_files(temp_files: Dict[str, str]):
     """Clean up temporary files"""
@@ -293,6 +353,9 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         # Encode audio output
         audio_result = encode_audio_output(output_path, validated_input["output_format"])
         
+        # Check cache status
+        cache_status = check_cache_status()
+        
         # Build response
         response = {
             **audio_result,
@@ -303,10 +366,12 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
                 "total_tokens": len(validated_input["text"].split()) + validated_input["max_new_tokens"]
             },
             "method": "subprocess_generation.py",
-            "command_summary": f"generation.py with {len(cmd)} parameters"
+            "command_summary": f"generation.py with {len(cmd)} parameters",
+            "cache_status": cache_status
         }
         
         logger.info(f"Successfully generated audio: {audio_result['duration']}s at {audio_result['sampling_rate']}Hz")
+        logger.info(f"Cache status: {len(cache_status['models_cached'])} models cached")
         return response
         
     except Exception as e:
