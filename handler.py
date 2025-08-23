@@ -228,31 +228,51 @@ def check_cache_status() -> Dict[str, Any]:
         "cache_directory": "/runpod-volume/.huggingface",
         "cache_exists": os.path.exists("/runpod-volume/.huggingface"),
         "transformers_cache_exists": os.path.exists("/runpod-volume/.huggingface/transformers"),
-        "models_cached": []
+        "models_cached": [],
+        "all_cached_items": []
     }
-    
-    # Check for specific Higgs Audio models in cache
-    higgs_models = [
-        "bosonai--higgs-audio-v2-generation-3B-base",
-        "bosonai--higgs-audio-v2-tokenizer"
-    ]
     
     transformers_cache_dir = "/runpod-volume/.huggingface/transformers"
     if os.path.exists(transformers_cache_dir):
-        for model_name in higgs_models:
-            model_path = os.path.join(transformers_cache_dir, model_name)
-            if os.path.exists(model_path):
-                cache_info["models_cached"].append(model_name)
-                # Get cache size
-                try:
-                    total_size = sum(
-                        os.path.getsize(os.path.join(dirpath, filename))
-                        for dirpath, dirnames, filenames in os.walk(model_path)
-                        for filename in filenames
-                    )
-                    cache_info[f"{model_name}_size_mb"] = round(total_size / (1024 * 1024), 2)
-                except Exception as e:
-                    logger.warning(f"Could not calculate size for {model_name}: {e}")
+        try:
+            # List all items in the cache directory
+            cached_items = os.listdir(transformers_cache_dir)
+            cache_info["all_cached_items"] = cached_items
+            
+            # Look for any Higgs Audio related models (various naming patterns)
+            higgs_patterns = ["bosonai", "higgs-audio", "higgs_audio"]
+            
+            for item in cached_items:
+                item_path = os.path.join(transformers_cache_dir, item)
+                if os.path.isdir(item_path):
+                    # Check if this looks like a Higgs Audio model
+                    if any(pattern in item.lower() for pattern in higgs_patterns):
+                        cache_info["models_cached"].append(item)
+                        
+                        # Get cache size
+                        try:
+                            total_size = sum(
+                                os.path.getsize(os.path.join(dirpath, filename))
+                                for dirpath, dirnames, filenames in os.walk(item_path)
+                                for filename in filenames
+                            )
+                            cache_info[f"{item}_size_mb"] = round(total_size / (1024 * 1024), 2)
+                        except Exception as e:
+                            logger.warning(f"Could not calculate size for {item}: {e}")
+            
+            # Calculate total cache size
+            try:
+                total_cache_size = sum(
+                    os.path.getsize(os.path.join(dirpath, filename))
+                    for dirpath, dirnames, filenames in os.walk(transformers_cache_dir)
+                    for filename in filenames
+                )
+                cache_info["total_cache_size_mb"] = round(total_cache_size / (1024 * 1024), 2)
+            except Exception as e:
+                logger.warning(f"Could not calculate total cache size: {e}")
+                
+        except Exception as e:
+            logger.warning(f"Error reading cache directory: {e}")
     
     return cache_info
 
