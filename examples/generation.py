@@ -41,6 +41,39 @@ If the user's message includes a [SPEAKER*] tag, do not read out the tag and gen
 If no speaker tag is present, select a suitable voice on your own."""
 
 
+def resolve_voice_paths(character_name, base_dir=None):
+    """
+    SAFE path resolver for voice files that checks multiple locations:
+    1. Normal voice_prompts folder (built-in voices) - PRIMARY LOCATION
+    2. Firebase temp location (custom voices) - SECONDARY LOCATION
+    3. Fallback to original path for normal error handling
+    
+    This function preserves ALL existing behavior while adding custom voice support.
+    """
+    if base_dir is None:
+        base_dir = CURR_DIR
+    
+    # Location 1: Normal voice_prompts (built-in voices) - PRIMARY
+    normal_audio_path = os.path.join(f"{base_dir}/voice_prompts", f"{character_name}.wav")
+    normal_text_path = os.path.join(f"{base_dir}/voice_prompts", f"{character_name}.txt")
+    
+    # Check if normal paths exist (built-in voices)
+    if os.path.exists(normal_audio_path) and os.path.exists(normal_text_path):
+        return normal_audio_path, normal_text_path
+    
+    # Location 2: Firebase temp location (custom voices) - SECONDARY
+    firebase_audio_path = os.path.join("/runpod-volume/temp_voices", f"{character_name}.wav")
+    firebase_text_path = os.path.join("/runpod-volume/temp_voices", f"{character_name}.txt")
+    
+    # Check if Firebase paths exist (custom voices)
+    if os.path.exists(firebase_audio_path) and os.path.exists(firebase_text_path):
+        return firebase_audio_path, firebase_text_path
+    
+    # Fallback: Return original paths (will cause normal error handling)
+    # This preserves ALL existing error messages and behavior
+    return normal_audio_path, normal_text_path
+
+
 def normalize_chinese_punctuation(text):
     """
     Convert Chinese (full-width) punctuation marks to English (half-width) equivalents.
@@ -432,8 +465,7 @@ def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_mess
         voice_profile = None
         for spk_id, character_name in enumerate(ref_audio.split(",")):
             if not character_name.startswith("profile:"):
-                prompt_audio_path = os.path.join(f"{CURR_DIR}/voice_prompts", f"{character_name}.wav")
-                prompt_text_path = os.path.join(f"{CURR_DIR}/voice_prompts", f"{character_name}.txt")
+                prompt_audio_path, prompt_text_path = resolve_voice_paths(character_name)
                 assert os.path.exists(prompt_audio_path), (
                     f"Voice prompt audio file {prompt_audio_path} does not exist."
                 )
