@@ -1,0 +1,282 @@
+PODCAST/INFLUENCER WAV VOICE COLLECTION - MASTER LIST (24kHz)
+================================================================
+Generated: 2025-08-24 00:08:15
+Total Voices: 75 WAV files
+Format: 24kHz, 16-bit, Mono PCM WAV (Higgs Audio V2 Compatible)
+================================================================
+
+Energetic Podcast Hosts (1-10)
+------------------------------
+  1. Blake_Sports_Podcast_Host.wav
+     Description: Upbeat millennial male host, fast-paced, inviting, sports podcast.
+
+  2. Luna_Music_Review_Host.wav
+     Description: Cool, laid-back female host, moderate energy, music review show.
+
+  3. Zack_Gaming_Enthusiast.wav
+     Description: Enthusiastic young gamer male host, lively, quick tempo, gaming podcast.
+
+  4. Maya_Pop_Culture_Queen.wav
+     Description: Witty Gen Z female host, playful, rapid exchanges, pop culture podcast.
+
+  5. Professor_Crime_Analyst.wav
+     Description: Intellectual older male, deep voice, measured but dynamic, true crime podcast.
+
+  6. Sofia_Relationship_Coach.wav
+     Description: Warm, vibrant Latina female, quick delivery, relationship advice podcast.
+
+  7. Benedict_Current_Affairs.wav
+     Description: Assertive British male host, confident, expressive, current affairs roundtable.
+
+  8. Scarlett_Comedy_Southern.wav
+     Description: Sassy, humorous Southern female, energetic, comedy podcast.
+
+  9. Marcus_Mindfulness_Guide.wav
+     Description: Friendly Gen X male, steady pace, thoughtful, mindfulness podcast.
+
+ 10. Zara_Beauty_Influencer.wav
+     Description: Charismatic young Black female host, animated, beauty/fashion influencer.
+
+
+Radio Personalities & TV Presenters (11-20)
+--------------------------------------------
+ 11. Rocco_Classic_Rock_DJ.wav
+     Description: Gravelly voiced classic rock DJ, American accent, energetic, radio.
+
+ 12. Tony_NYC_Morning_Radio.wav
+     Description: Slick, spirited NYC morning radio host, brisk, high-energy.
+
+ 13. Grace_Weather_Forecaster.wav
+     Description: Calm, trusted weather forecaster, gentle pace, reassuring, TV.
+
+ 14. Veronica_TV_News_Anchor.wav
+     Description: Energetic TV news anchor (female), engaging tone, rapid headline delivery.
+
+ 15. Retro_Radio_Pirate.wav
+     Description: Nostalgic '80s pirate radio host, lively, storytelling.
+
+ 16. Cyrus_Sarcastic_Critic.wav
+     Description: Sarcastic TV critic, deadpan delivery, snarky tone.
+
+ 17. Amelie_French_Culture.wav
+     Description: Elegant French culture presenter, articulate, moderate speed.
+
+ 18. Aussie_Variety_Host.wav
+     Description: Expressive Australian variety show host, dynamic, upbeat.
+
+ 19. Seamus_Irish_Phone_Host.wav
+     Description: Wry Irish late-night phone-in host, conversational, relaxed.
+
+ 20. Dr_Maple_Science_Radio.wav
+     Description: Eccentric Canadian radio scientist, fast, exciting explanations.
+
+
+Influencer & Content Creator Styles (21-25)
+-------------------------------------------
+ 21. Tessa_TikTok_Star.wav
+     Description: Lively TikTok influencer (female), expressive, rapid-fire.
+
+ 22. Adventure_Vlog_Jake.wav
+     Description: Vlog-style energetic male, upbeat, natural, travel content.
+
+ 23. Inspire_Coach_Mia.wav
+     Description: Motivational Instagram coach, female, inspiring, quick tempo.
+
+ 24. Wellness_Creator_Sage.wav
+     Description: Nurturing YouTube creator, gentle, moderate pace, wellness vlogs.
+
+ 25. Explorer_Outdoors_Max.wav
+     Description: Adventurous outdoorsman host, dynamic, vivid, YouTube expeditions.
+
+
+Emotional Presence & Personality (27-36)
+----------------------------------------
+ 27. Dr_Empathy_Therapist.wav
+     Description: Deeply empathetic therapist (female), mellow, slow, caring.
+
+ 28. Motivator_Joy_Speaker.wav
+     Description: Joyful motivational speaker (male), vibrant, expressive.
+
+ 29. Sincere_Apology_Voice.wav
+     Description: Sincere apology tone, gentle, moderate pace, influencer address.
+
+ 31. Zen_Meditation_Master.wav
+     Description: Calm, meditative guide (gender-neutral), soothing, tranquil.
+
+ 32. Activist_Passion_Fire.wav
+     Description: Intense, passionate activist (female), driven, quick, powerful.
+
+ 33. Bestie_Social_Bubbly.wav
+     Description: Playful best friend voice, bubbly, fast-paced, social podcast.
+
+ 34. Honest_Confessional_Raw.wav
+     Description: Vulnerable, slightly shaky but real, honest influencer confessional.
+
+ 35. Celebration_Party_Host.wav
+     Description: Bold, celebratory host, cheers and applause in speech.
+
+ 36. Surprise_Panel_Reactor.wav
+     Description: Surprised, quick, animated responder, panel show.
+
+
+Niche Podcast Genres (37-46)
+----------------------------
+ 37. GameNight_Sports_Recap.wav
+     Description: Dramatic sports recap announcer (male), intense, game-night energy.
+
+ 38. Whisper_ASMR_Gentle.wav
+     Description: Gentle ASMR podcaster (female), whisper-soft, slow, serene.
+
+ 39. Fantasy_Lore_Keeper.wav
+     Description: Animated fantasy lore storyteller, magical tone, swift.
+
+ 40. Homey_Cooking_Chef.wav
+     Description: Relaxed food/cooking host (male), warm, moderate, homey.
+
+ 41. Philosophy_Deep_Thinker.wav
+     Description: Introspective philosophy podcast host, thoughtful, moderate, reflective.
+
+ 42. TrueCrime_Team_Energy.wav
+     Description: Lively true crime team, energetic group exchanges, multi-speaker style.
+
+ 43. Travel_Couple_Casual.wav
+     Description: Relaxed travel couple voice, alternating style, casual, conversational.
+
+ 44. Debate_Sharp_Moderator.wav
+     Description: Intense debate moderator, fast, sharp, strong transitions.
+
+ 45. Finance_Tips_Expert.wav
+     Description: Personal finance tips host (female), sharp, engaging.
+
+ 46. Victory_Sports_Ecstatic.wav
+     Description: Ecstatic sports victory commentator, raised tempo.
+
+
+Social/Community Voice Styles (47-51)
+-------------------------------------
+ 47. Community_Call_Helper.wav
+     Description: Community call-in show, empathetic host, patient, caring.
+
+ 48. Humor_Debate_Panelist.wav
+     Description: Humorous debate show panelist (male), witty, quick, banter.
+
+ 49. TownHall_Compassionate.wav
+     Description: Sensitive, compassionate town hall moderator (female).
+
+ 50. Parent_Talk_Supportive.wav
+     Description: Friendly, supportive parent talk show host, gentle.
+
+ 51. Honest_Review_Critical.wav
+     Description: Honest, no-nonsense reviewer, critical, firm but fair.
+
+
+Regional/Accent Diversity (52-60)
+---------------------------------
+ 52. NewYork_Fast_Talker.wav
+     Description: Fast-talking New Yorker podcast host, classic accent.
+
+ 53. Southern_Radio_Drawl.wav
+     Description: Southern US talk radio male, animated, drawl.
+
+ 54. London_Urban_Podcast.wav
+     Description: Fast-paced urban London podcast voice, energetic.
+
+ 55. Scottish_Story_Warm.wav
+     Description: Relaxed Scottish storytelling host, warm, playful.
+
+ 56. Toronto_News_Clipped.wav
+     Description: Abrupt Toronto news podcaster, clipped but lively.
+
+ 57. Dublin_Quick_Wit.wav
+     Description: Quick-witted Dublin podcaster (female), musical voice.
+
+ 58. Berlin_Energetic_Voice.wav
+     Description: Energetic Berlin influencer (male), quick, expressive.
+
+ 59. Tokyo_Panel_Poised.wav
+     Description: Poised Tokyo TV panel host, brisk, respectful.
+
+ 60. Mumbai_Youth_Dynamic.wav
+     Description: Upbeat Mumbai youth radio, lively, dynamic.
+
+
+Comedic & Satirical Styles (61-65)
+----------------------------------
+ 61. Parody_Exaggerated_Host.wav
+     Description: Over-the-top parody host, exaggerated delivery.
+
+ 62. Deadpan_Satirist_Dry.wav
+     Description: Deadpan satirist, dry, slow, subtle humor.
+
+ 63. Improv_Zany_Comedian.wav
+     Description: Zany improv comedian (male), rapid, offbeat.
+
+ 64. Observational_Comedy_Live.wav
+     Description: Observational comedian (female), animated, lively.
+
+ 65. Prank_Mischief_Announcer.wav
+     Description: Prank show announcer, high energy, mischief.
+
+
+Emotional Shifted Styles (66-70)
+--------------------------------
+ 66. Outrage_Commentary_Sharp.wav
+     Description: Outraged commentator host, sharp, rapid.
+
+ 67. Disappointed_Gentle_Host.wav
+     Description: Disappointed host, sad undertone, gentle.
+
+ 68. Anticipation_Suspense_Build.wav
+     Description: Eager anticipation, heightened pace, suspenseful.
+
+ 69. Frustrated_Complaint_Reader.wav
+     Description: Frustrated customer complaint reader, animated.
+
+ 70. Heartfelt_Thank_You.wav
+     Description: Heartfelt thank you message, warm, slow, sincere.
+
+
+Thoughtful/Educational (71-75)
+------------------------------
+ 71. Science_Passion_Explainer.wav
+     Description: Passionate science explainer, fast but clear.
+
+ 72. History_Methodical_Voice.wav
+     Description: Methodical historian voice, careful, moderate tempo.
+
+ 73. PopCulture_Fun_Explainer.wav
+     Description: Playful pop culture explainer, quick, fun.
+
+ 74. Literary_Poetic_Critic.wav
+     Description: Emotional literary critic, poetic, varied pace.
+
+ 75. Tech_Analytical_Reviewer.wav
+     Description: Detailed technology reviewer, analytical, crisp, moderate-fast.
+
+
+Additional Generated Voices (76-87)
+----------------------------------
+ 76. Yoga_Mindful_Center.wav
+     Description: Mindful yoga podcast host, centered, slow, deliberate.
+
+ 87. Couples_Therapy_Banter.wav
+     Description: Fast-paced couples therapy podcast, playful banter.
+
+
+Alternative Versions
+-------------------
+ Alt1. Yoga_Mindful_Center_Alt.wav
+       Description: Alternative version of mindful yoga podcast host.
+
+ Alt2. Couples_Therapy_Banter_Alt.wav
+       Description: Alternative version of couples therapy podcast host.
+
+================================================================
+TECHNICAL SPECIFICATIONS:
+- Sample Rate: 24,000 Hz (24kHz)
+- Bit Depth: 16-bit
+- Channels: Mono (single channel)
+- Format: Linear PCM WAV (uncompressed)
+- Duration: 3-10 seconds per sample
+- Optimized for: Higgs Audio V2 voice cloning
+================================================================
