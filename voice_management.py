@@ -29,13 +29,13 @@ class VoiceManager:
         
         Args:
             user_id: User ID (e.g., 'anonymous')
-            voice_name: Voice name (e.g., 'cloned_1756183899826_qawwyeh0f_50t')
+            voice_name: Voice name (e.g., 'cloned_1756205093378_bzbfy4n4x_Maya_Pop_Culture_Queen')
         
         Returns:
             Dict with 'audio_path' and 'text_path' if successful, None if failed
         """
         try:
-            # Firebase Storage paths
+            # Firebase Storage paths - Firebase Storage doesn't use leading slashes
             audio_path = f"user_voices/{user_id}/{voice_name}.wav"
             text_path = f"user_voices/{user_id}/{voice_name}.txt"
             
