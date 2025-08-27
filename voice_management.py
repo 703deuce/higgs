@@ -94,9 +94,10 @@ class VoiceManager:
     def _get_download_url(self, firebase_path: str) -> Optional[str]:
         """Get download URL for Firebase Storage file"""
         try:
-            # For now, construct the download URL directly
-            # In production, you'd use Firebase Admin SDK or REST API
-            download_url = f"https://firebasestorage.googleapis.com/v0/b/{self.storage_bucket}/o/{firebase_path}?alt=media"
+            # URL encode the path for Firebase Storage REST API
+            import urllib.parse
+            encoded_path = urllib.parse.quote(firebase_path, safe='')
+            download_url = f"https://firebasestorage.googleapis.com/v0/b/{self.storage_bucket}/o/{encoded_path}?alt=media"
             return download_url
         except Exception as e:
             print(f"❌ Error getting download URL: {str(e)}")
