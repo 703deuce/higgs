@@ -43,12 +43,13 @@ If no speaker tag is present, select a suitable voice on your own."""
 
 def resolve_voice_paths(character_name, base_dir=None):
     """
-    SAFE path resolver for voice files that checks multiple locations:
+    SMART voice path resolver that automatically handles both regular and custom voices:
     1. Normal voice_prompts folder (built-in voices) - PRIMARY LOCATION
     2. Firebase temp location (custom voices) - SECONDARY LOCATION
-    3. Fallback to original path for normal error handling
+    3. Automatic Firebase download for custom voices when needed
+    4. Fallback to original path for normal error handling
     
-    This function preserves ALL existing behavior while adding custom voice support.
+    This function preserves ALL existing behavior while adding automatic custom voice support.
     """
     if base_dir is None:
         base_dir = CURR_DIR
@@ -59,6 +60,7 @@ def resolve_voice_paths(character_name, base_dir=None):
     
     # Check if normal paths exist (built-in voices)
     if os.path.exists(normal_audio_path) and os.path.exists(normal_text_path):
+        logger.info(f"🎤 Using regular voice: {character_name}")
         return normal_audio_path, normal_text_path
     
     # Location 2: Firebase temp location (custom voices) - SECONDARY
@@ -67,10 +69,45 @@ def resolve_voice_paths(character_name, base_dir=None):
     
     # Check if Firebase paths exist (custom voices)
     if os.path.exists(firebase_audio_path) and os.path.exists(firebase_text_path):
+        logger.info(f"🎤 Using cached custom voice: {character_name}")
         return firebase_audio_path, firebase_text_path
+    
+    # Location 3: Try to download from Firebase if it's a custom voice
+    try:
+        # Import voice manager (only when needed)
+        import sys
+        sys.path.append('/app')  # Add app directory to path
+        from voice_management import VoiceManager
+        
+        # Firebase configuration
+        firebase_config = {
+            "apiKey": "AIzaSyASdf98Soi-LtMowVOQMhQvMWWVEP3KoC8",
+            "authDomain": "aitts-d4c6d.firebaseapp.com",
+            "projectId": "aitts-d4c6d",
+            "storageBucket": "aitts-d4c6d.firebasestorage.app",
+            "messagingSenderId": "927299361889",
+            "appId": "1:927299361889:web:13408945d50bda7a2f5e20",
+            "measurementId": "G-P1TK2HHBXR"
+        }
+        
+        voice_manager = VoiceManager(firebase_config)
+        
+        # Try to download the custom voice
+        logger.info(f"🔽 Attempting to download custom voice from Firebase: {character_name}")
+        voice_info = voice_manager.download_custom_voice("anonymous", character_name)
+        
+        if voice_info and os.path.exists(voice_info['audio_path']) and os.path.exists(voice_info['text_path']):
+            logger.info(f"✅ Successfully downloaded custom voice: {character_name}")
+            return voice_info['audio_path'], voice_info['text_path']
+        else:
+            logger.warning(f"⚠️ Failed to download custom voice: {character_name}")
+            
+    except Exception as e:
+        logger.warning(f"⚠️ Error downloading custom voice {character_name}: {str(e)}")
     
     # Fallback: Return original paths (will cause normal error handling)
     # This preserves ALL existing error messages and behavior
+    logger.info(f"🎤 Falling back to regular voice path for: {character_name}")
     return normal_audio_path, normal_text_path
 
 
