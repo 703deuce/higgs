@@ -33,3 +33,6 @@ safetensors
 
 # For error tracking and monitoring (optional)
 sentry-sdk
+
+# Firebase integration dependencies
+requests>=2.31.0
