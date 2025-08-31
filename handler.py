@@ -1,48 +1,32 @@
-#!/usr/bin/env python3
-"""
-Handler that uses subprocess to call the official generation.py script.
-This ensures we use the exact same logic as the command-line tool for ALL features.
-"""
-
 import os
-import sys
 import json
 import base64
 import tempfile
 import subprocess
-import logging
 import time
-from typing import Dict, Any
-import soundfile as sf
+import logging
+from typing import Dict, Any, Optional
+from voice_management import VoiceManager
 
-# Set up Hugging Face cache to use persistent volume BEFORE any imports
-os.environ["HF_HOME"] = "/runpod-volume/.huggingface"
-os.environ["TRANSFORMERS_CACHE"] = "/runpod-volume/.huggingface/transformers"
-os.environ["HF_DATASETS_CACHE"] = "/runpod-volume/.huggingface/datasets"
-os.environ["TORCH_HOME"] = "/runpod-volume/.torch"
-
-# Create cache directories if they don't exist
-os.makedirs("/runpod-volume/.huggingface/transformers", exist_ok=True)
-os.makedirs("/runpod-volume/.huggingface/datasets", exist_ok=True)
-os.makedirs("/runpod-volume/.torch", exist_ok=True)
-
-# Add the app directory to Python path for imports
-sys.path.insert(0, '/app')
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import runpod
-
-# Set up logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Log cache configuration
-logger.info(f"HF_HOME set to: {os.environ.get('HF_HOME')}")
-logger.info(f"TRANSFORMERS_CACHE set to: {os.environ.get('TRANSFORMERS_CACHE')}")
-logger.info(f"Cache directories created and ready for model persistence")
+# Initialize Voice Manager with the same Firebase config as the provided code
+firebase_config = {
+    "apiKey": "AIzaSyASdf98Soi-LtMowVOQMhQvMWWVEP3KoC8",
+    "authDomain": "aitts-d4c6d.firebaseapp.com",
+    "projectId": "aitts-d4c6d",
+    "storageBucket": "aitts-d4c6d.firebasestorage.app",
+    "messagingSenderId": "927299361889",
+    "appId": "1:927299361889:web:13408945d50bda7a2f5e20",
+    "measurementId": "G-P1TK2HHBXR"
+}
+
+voice_manager = VoiceManager(firebase_config)
 
 def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate and normalize input parameters"""
+    """Validate and normalize input parameters with custom voice support"""
     if "input" not in event:
         raise ValueError("Missing 'input' field in request")
     
@@ -50,6 +34,12 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
     
     if "text" not in input_data:
         raise ValueError("Missing 'text' field in input")
+    
+    # Check if user_id is required (only for custom voices)
+    ref_audio_name = input_data.get("ref_audio_name")
+    if ref_audio_name and ref_audio_name.startswith("cloned_"):
+        if "user_id" not in input_data:
+            raise ValueError("user_id is required for custom voices (cloned_*)")
     
     # Map API parameters to generation.py arguments
     validated_input = {
@@ -66,7 +56,11 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
         # Reference audio for voice cloning
         "ref_audio_base64": input_data.get("ref_audio_base64", None),
         "ref_audio_text": input_data.get("ref_audio_text", None),
-        "ref_audio_name": input_data.get("ref_audio_name", None),  # Allow direct reference to existing voice samples
+        "ref_audio_name": ref_audio_name,
+        
+        # Custom voice support
+        "custom_voice_id": input_data.get("custom_voice_id", None),
+        "user_id": input_data.get("user_id", None),
         
         # Scene and experimental features
         "scene_description": input_data.get("scene_description", None),
@@ -82,7 +76,7 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
     return validated_input
 
 def create_temp_files(validated_input: Dict[str, Any]) -> Dict[str, str]:
-    """Create temporary files needed for generation.py"""
+    """Create temporary files needed for generation.py with custom voice support"""
     temp_files = {}
     
     # Create transcript file
@@ -98,15 +92,38 @@ def create_temp_files(validated_input: Dict[str, Any]) -> Dict[str, str]:
             f.write(validated_input["scene_description"])
         temp_files['scene'] = scene_path
     
-    # Handle reference audio
+    # Handle reference audio with custom voice support
     ref_audio_name = None
     
-    # Option 1: Use existing voice sample by name
-    if validated_input["ref_audio_name"]:
-        ref_audio_name = validated_input["ref_audio_name"]
-        logger.info(f"Using existing voice sample: {ref_audio_name}")
+    # Priority 1: Custom voice from Firebase (requires user_id)
+    if validated_input["ref_audio_name"] and validated_input["ref_audio_name"].startswith("cloned_"):
+        if not validated_input["user_id"]:
+            raise ValueError("user_id is required for custom voices (cloned_*)")
+        
+        try:
+            # Use voice manager to download custom voice
+            voice_info = voice_manager.download_custom_voice(
+                validated_input["user_id"],
+                validated_input["ref_audio_name"]
+            )
+            if voice_info:
+                ref_audio_name = voice_info['voice_name']
+                temp_files['custom_voice'] = voice_info
+                temp_files['needs_cleanup'] = True
+                logger.info(f"Using custom voice: {ref_audio_name} for user: {validated_input['user_id']}")
+            else:
+                logger.warning(f"Failed to download custom voice: {validated_input['ref_audio_name']}")
+                raise ValueError(f"Failed to download custom voice: {validated_input['ref_audio_name']}")
+        except Exception as e:
+            logger.error(f"Error with custom voice: {e}")
+            raise
     
-    # Option 2: Create temporary voice sample from base64
+    # Priority 2: Use existing voice sample by name (regular voices)
+    elif validated_input["ref_audio_name"]:
+        ref_audio_name = validated_input["ref_audio_name"]
+        logger.info(f"Using regular voice sample: {ref_audio_name}")
+    
+    # Priority 3: Create temporary voice sample from base64
     elif validated_input["ref_audio_base64"]:
         # Decode base64 audio
         audio_data = base64.b64decode(validated_input["ref_audio_base64"])
@@ -114,18 +131,18 @@ def create_temp_files(validated_input: Dict[str, Any]) -> Dict[str, str]:
         # Create a unique name for this reference audio
         ref_audio_name = f"temp_ref_{int(time.time())}"
         
-        # Save reference audio in voice_prompts directory (where generation.py expects it)
-        voice_prompts_dir = "/app/examples/voice_prompts"
-        os.makedirs(voice_prompts_dir, exist_ok=True)
+        # Save reference audio in Firebase temp voices directory
+        firebase_temp_dir = "/runpod-volume/temp_voices"
+        os.makedirs(firebase_temp_dir, exist_ok=True)
         
-        ref_audio_path = os.path.join(voice_prompts_dir, f"{ref_audio_name}.wav")
+        ref_audio_path = os.path.join(firebase_temp_dir, f"{ref_audio_name}.wav")
         with open(ref_audio_path, 'wb') as f:
             f.write(audio_data)
         temp_files['ref_audio'] = ref_audio_path
         
-        # Save reference transcription in voice_prompts directory
+        # Save reference transcription in Firebase temp voices directory
         if validated_input["ref_audio_text"]:
-            ref_text_path = os.path.join(voice_prompts_dir, f"{ref_audio_name}.txt")
+            ref_text_path = os.path.join(firebase_temp_dir, f"{ref_audio_name}.txt")
             with open(ref_text_path, 'w', encoding='utf-8') as f:
                 f.write(validated_input["ref_audio_text"])
             temp_files['ref_text'] = ref_text_path
@@ -143,8 +160,7 @@ def create_temp_files(validated_input: Dict[str, Any]) -> Dict[str, str]:
     return temp_files
 
 def build_generation_command(validated_input: Dict[str, Any], temp_files: Dict[str, str]) -> list:
-    """Build the command line arguments for generation.py"""
-    
+    """Build the command to run generation.py"""
     cmd = [
         "python3", "/app/examples/generation.py",
         "--transcript", temp_files['transcript'],
@@ -160,6 +176,11 @@ def build_generation_command(validated_input: Dict[str, Any], temp_files: Dict[s
     # Add seed if provided
     if validated_input["seed"] is not None:
         cmd.extend(["--seed", str(validated_input["seed"])])
+    
+    # Add user_id if provided (for custom voices)
+    if validated_input.get("user_id"):
+        cmd.extend(["--user_id", validated_input["user_id"]])
+        logger.info(f"🔍 Debug: Added --user_id {validated_input['user_id']} to command")
     
     # Add scene prompt if provided
     if validated_input["scene_description"]:
@@ -184,12 +205,10 @@ def build_generation_command(validated_input: Dict[str, Any], temp_files: Dict[s
     
     return cmd
 
-def run_generation(cmd: list) -> tuple:
+def run_generation(cmd: list, user_id: str = None) -> tuple:
     """Run the generation.py command and return success status and output"""
     try:
-        logger.info(f"Running command: {' '.join(cmd)}")
-        
-        # Ensure subprocess inherits the cache environment variables
+        # Set environment variables for caching
         env = os.environ.copy()
         env.update({
             "HF_HOME": "/runpod-volume/.huggingface",
@@ -198,13 +217,14 @@ def run_generation(cmd: list) -> tuple:
             "TORCH_HOME": "/runpod-volume/.torch"
         })
         
+        logger.info(f"Running command: {' '.join(cmd)}")
+        
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=600,  # 10 minute timeout for long-form generation
-            cwd="/app",
-            env=env  # Pass the environment with cache variables
+            env=env,
+            timeout=600  # 10 minute timeout
         )
         
         if result.returncode == 0:
@@ -212,8 +232,9 @@ def run_generation(cmd: list) -> tuple:
             return True, result.stdout
         else:
             logger.error(f"Generation failed with return code {result.returncode}")
+            logger.error(f"STDOUT: {result.stdout}")
             logger.error(f"STDERR: {result.stderr}")
-            return False, result.stderr
+            return False, f"STDERR: {result.stderr}"
             
     except subprocess.TimeoutExpired:
         logger.error("Generation timed out after 10 minutes")
@@ -222,114 +243,108 @@ def run_generation(cmd: list) -> tuple:
         logger.error(f"Error running generation: {e}")
         return False, str(e)
 
-def check_cache_status() -> Dict[str, Any]:
-    """Check the status of the Hugging Face cache"""
-    cache_info = {
-        "cache_directory": "/runpod-volume/.huggingface",
-        "cache_exists": os.path.exists("/runpod-volume/.huggingface"),
-        "transformers_cache_exists": os.path.exists("/runpod-volume/.huggingface/transformers"),
-        "models_cached": [],
-        "all_cached_items": []
-    }
-    
-    transformers_cache_dir = "/runpod-volume/.huggingface/transformers"
-    if os.path.exists(transformers_cache_dir):
-        try:
-            # List all items in the cache directory
-            cached_items = os.listdir(transformers_cache_dir)
-            cache_info["all_cached_items"] = cached_items
-            
-            # Look for any Higgs Audio related models (various naming patterns)
-            higgs_patterns = ["bosonai", "higgs-audio", "higgs_audio"]
-            
-            for item in cached_items:
-                item_path = os.path.join(transformers_cache_dir, item)
-                if os.path.isdir(item_path):
-                    # Check if this looks like a Higgs Audio model
-                    if any(pattern in item.lower() for pattern in higgs_patterns):
-                        cache_info["models_cached"].append(item)
-                        
-                        # Get cache size
-                        try:
-                            total_size = sum(
-                                os.path.getsize(os.path.join(dirpath, filename))
-                                for dirpath, dirnames, filenames in os.walk(item_path)
-                                for filename in filenames
-                            )
-                            cache_info[f"{item}_size_mb"] = round(total_size / (1024 * 1024), 2)
-                        except Exception as e:
-                            logger.warning(f"Could not calculate size for {item}: {e}")
-            
-            # Calculate total cache size
-            try:
-                total_cache_size = sum(
-                    os.path.getsize(os.path.join(dirpath, filename))
-                    for dirpath, dirnames, filenames in os.walk(transformers_cache_dir)
-                    for filename in filenames
-                )
-                cache_info["total_cache_size_mb"] = round(total_cache_size / (1024 * 1024), 2)
-            except Exception as e:
-                logger.warning(f"Could not calculate total cache size: {e}")
-                
-        except Exception as e:
-            logger.warning(f"Error reading cache directory: {e}")
-    
-    return cache_info
-
 def cleanup_temp_files(temp_files: Dict[str, str]):
-    """Clean up temporary files"""
-    for file_type, file_path in temp_files.items():
-        if file_type != 'ref_name' and os.path.exists(file_path):
-            try:
-                os.unlink(file_path)
-                logger.debug(f"Cleaned up {file_type}: {file_path}")
-            except Exception as e:
-                logger.warning(f"Failed to clean up {file_path}: {e}")
+    """Clean up temporary files including custom voices"""
+    try:
+        # Clean up custom voice files
+        if temp_files.get('needs_cleanup') and 'custom_voice' in temp_files:
+            custom_voice = temp_files['custom_voice']
+            voice_manager.cleanup_temp_voice(custom_voice['voice_name'])
+            logger.info(f"Cleaned up custom voice: {custom_voice['voice_name']}")
+        
+        # Clean up other temp files
+        for key, path in temp_files.items():
+            if key in ['transcript', 'scene', 'ref_audio', 'ref_text'] and os.path.exists(path):
+                try:
+                    os.unlink(path)
+                    logger.debug(f"Cleaned up: {path}")
+                except Exception as e:
+                    logger.warning(f"Failed to cleanup {path}: {e}")
+                    
+    except Exception as e:
+        logger.warning(f"Error during cleanup: {e}")
 
 def encode_audio_output(output_path: str, output_format: str) -> Dict[str, Any]:
-    """Read generated audio and encode it for the response"""
+    """Encode the generated audio file to base64"""
     try:
-        # Read the generated audio
-        audio_data, sampling_rate = sf.read(output_path)
+        with open(output_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
         
-        # Convert to base64
-        with open(output_path, "rb") as f:
-            audio_bytes = f.read()
-        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+        # Encode to base64
+        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
         
-        # Calculate duration
-        duration = len(audio_data) / sampling_rate
-        
-        # Save to volume for persistence
-        timestamp = int(time.time())
-        volume_filename = f"/runpod-volume/generated_audio_subprocess_{timestamp}.wav"
-        os.makedirs("/runpod-volume", exist_ok=True)
-        sf.write(volume_filename, audio_data, sampling_rate)
-        logger.info(f"Audio also saved to volume: {volume_filename}")
+        # Get file size and duration info
+        file_size = len(audio_data)
         
         return {
             "audio_base64": audio_base64,
-            "sampling_rate": int(sampling_rate),
-            "duration": round(duration, 2),
+            "sampling_rate": 16000,  # Default for Higgs Audio
+            "duration": file_size / (16000 * 2),  # Rough estimate
             "format": output_format,
             "content_type": f"audio/{output_format}",
-            "volume_path": volume_filename
+            "volume_path": output_path,
+            "file_size_bytes": file_size
         }
         
     except Exception as e:
         logger.error(f"Error encoding audio output: {e}")
         raise
 
+def check_cache_status() -> Dict[str, Any]:
+    """Check the status of cached models"""
+    cache_info = {
+        "cache_directory": "/runpod-volume/temp_voices",
+        "cache_exists": os.path.exists("/runpod-volume/temp_voices"),
+        "transformers_cache_exists": os.path.exists("/runpod-volume/temp_voices/transformers"),
+        "models_cached": [],
+        "all_cached_items": []
+    }
+    
+    transformers_cache_dir = "/runpod-volume/temp_voices/transformers"
+    if os.path.exists(transformers_cache_dir):
+        try:
+            cached_items = os.listdir(transformers_cache_dir)
+            cache_info["all_cached_items"] = cached_items
+            
+            # Look for Higgs Audio related models
+            higgs_patterns = ["bosonai", "higgs-audio", "higgs_audio"]
+            for item in cached_items:
+                item_path = os.path.join(transformers_cache_dir, item)
+                if os.path.isdir(item_path):
+                    if any(pattern in item.lower() for pattern in higgs_patterns):
+                        cache_info["models_cached"].append(item)
+                        
+                        # Calculate size
+                        total_size = 0
+                        for root, dirs, files in os.walk(item_path):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                if os.path.exists(file_path):
+                                    total_size += os.path.getsize(file_path)
+                        cache_info[f"{item}_size_mb"] = round(total_size / (1024 * 1024), 2)
+            
+            # Calculate total cache size
+            total_cache_size = 0
+            for root, dirs, files in os.walk(transformers_cache_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    if os.path.exists(file_path):
+                        total_cache_size += os.path.getsize(file_path)
+            cache_info["total_cache_size_mb"] = round(total_cache_size / (1024 * 1024), 2)
+            
+        except Exception as e:
+            logger.warning(f"Error reading cache directory: {e}")
+    
+    return cache_info
+
 def handler(event: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Main handler function that uses subprocess to call generation.py
-    
-    This approach ensures we use the exact same logic as the official command-line tool,
-    supporting ALL features including chunking, voice cloning, and experimental capabilities.
+    Enhanced handler function with custom voice support
     
     Features supported:
     - Regular text-to-speech
-    - Voice cloning (with ref_audio_base64 + ref_audio_text OR ref_audio_name)
+    - Built-in voice cloning (with ref_audio_base64 + ref_audio_text OR ref_audio_name)
+    - Custom user voices from Firebase Storage
     - Long-form chunking (chunk_method: "word", "speaker")
     - Experimental humming ([humming start/end])
     - Experimental BGM ([music start/end] + ref_audio_in_system_message)
@@ -340,7 +355,7 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
     temp_files = {}
     
     try:
-        logger.info("Processing request with subprocess approach...")
+        logger.info("Processing request with custom voice support...")
         
         # Validate input
         validated_input = validate_input(event)
@@ -354,7 +369,10 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         cmd = build_generation_command(validated_input, temp_files)
         
         # Run generation
-        success, output = run_generation(cmd)
+        logger.info(f"🔍 Debug: user_id from validated_input: {validated_input.get('user_id')}")
+        logger.info(f"🔍 Debug: ref_audio_name from validated_input: {validated_input.get('ref_audio_name')}")
+        logger.info(f"🔍 Debug: About to call run_generation with user_id: {validated_input.get('user_id')}")
+        success, output = run_generation(cmd, validated_input["user_id"])
         
         if not success:
             return {
@@ -379,32 +397,155 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         # Build response
         response = {
             **audio_result,
-            "generated_text": "<|AUDIO_OUT|>",  # Standard response for audio generation
+            "generated_text": "<|AUDIO_OUT|>",
             "usage": {
                 "prompt_tokens": len(validated_input["text"].split()),
                 "completion_tokens": validated_input["max_new_tokens"],
                 "total_tokens": len(validated_input["text"].split()) + validated_input["max_new_tokens"]
             },
-            "method": "subprocess_generation.py",
+            "method": "subprocess_generation.py_with_custom_voices",
             "command_summary": f"generation.py with {len(cmd)} parameters",
             "cache_status": cache_status
         }
         
-        logger.info(f"Successfully generated audio: {audio_result['duration']}s at {audio_result['sampling_rate']}Hz")
-        logger.info(f"Cache status: {len(cache_status['models_cached'])} models cached")
+        # Add custom voice info if used
+        if 'custom_voice' in temp_files:
+            response["custom_voice_used"] = {
+                "voice_id": validated_input.get("custom_voice_id"),
+                "voice_name": temp_files['custom_voice']['voice_name'],
+                "user_id": validated_input.get("user_id")
+            }
+        
+        logger.info("Request processed successfully")
         return response
         
     except Exception as e:
         logger.error(f"Error in handler: {e}")
         return {
-            "error": str(e),
-            "error_type": type(e).__name__
+            "error": f"Handler error: {str(e)}",
+            "error_type": "HandlerError"
         }
+    
     finally:
         # Clean up temporary files
         if temp_files:
             cleanup_temp_files(temp_files)
+            logger.info("Temporary files cleaned up")
 
-if __name__ == "__main__":
-    # Start the RunPod serverless handler
-    runpod.serverless.start({"handler": handler})
+# Voice management endpoints for SaaS
+def handle_voice_upload(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle custom voice upload requests"""
+    try:
+        input_data = event.get("input", {})
+        
+        # Validate required fields
+        required_fields = ["user_id", "voice_name", "audio_base64", "transcription"]
+        for field in required_fields:
+            if field not in input_data:
+                return {
+                    "success": False,
+                    "error": f"Missing required field: {field}",
+                    "error_type": "ValidationError"
+                }
+        
+        # Validate voice upload
+        validation = voice_manager.validate_voice_upload(
+            input_data["audio_base64"],
+            input_data["transcription"]
+        )
+        
+        if not validation["valid"]:
+            return {
+                "success": False,
+                "error": validation["error"],
+                "error_type": "ValidationError"
+            }
+        
+        # Upload voice
+        result = voice_manager.upload_custom_voice(
+            user_id=input_data["user_id"],
+            voice_name=input_data["voice_name"],
+            audio_base64=input_data["audio_base64"],
+            transcription=input_data["transcription"],
+            voice_description=input_data.get("voice_description")
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in voice upload handler: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": "HandlerError"
+        }
+
+def handle_voice_list(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle voice listing requests"""
+    try:
+        input_data = event.get("input", {})
+        user_id = input_data.get("user_id")
+        
+        if not user_id:
+            return {
+                "success": False,
+                "error": "Missing user_id",
+                "error_type": "ValidationError"
+            }
+        
+        voices = voice_manager.get_user_voices(user_id)
+        
+        return {
+            "success": True,
+            "voices": voices,
+            "count": len(voices)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in voice list handler: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": "HandlerError"
+        }
+
+def handle_voice_delete(event: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle voice deletion requests"""
+    try:
+        input_data = event.get("input", {})
+        
+        # Validate required fields
+        required_fields = ["user_id", "voice_id"]
+        for field in required_fields:
+            if field not in input_data:
+                return {
+                    "success": False,
+                    "error": f"Missing required field: {field}",
+                    "error_type": "ValidationError"
+                }
+        
+        # Delete voice
+        success = voice_manager.delete_voice(
+            input_data["voice_id"],
+            input_data["user_id"]
+        )
+        
+        if success:
+            return {
+                "success": True,
+                "message": "Voice deleted successfully"
+            }
+        else:
+            return {
+                "success": False,
+                "error": "Failed to delete voice",
+                "error_type": "DeletionError"
+            }
+        
+    except Exception as e:
+        logger.error(f"Error in voice delete handler: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": "HandlerError"
+        }
