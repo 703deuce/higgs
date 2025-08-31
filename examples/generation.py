@@ -92,9 +92,16 @@ def resolve_voice_paths(character_name, base_dir=None):
         
         voice_manager = VoiceManager(firebase_config)
         
-        # Try to download the custom voice
-        logger.info(f"🔽 Attempting to download custom voice from Firebase: {character_name}")
-        voice_info = voice_manager.download_custom_voice("anonymous", character_name)
+        # Get user_id from environment variable (set by handler)
+        user_id = os.environ.get("HIGGS_USER_ID")
+        if not user_id:
+            logger.warning(f"⚠️ No HIGGS_USER_ID environment variable found for custom voice: {character_name}")
+            # Fallback to original paths for normal error handling
+            return normal_audio_path, normal_text_path
+        
+        # Try to download the custom voice using the actual user_id
+        logger.info(f"🔽 Attempting to download custom voice from Firebase: {character_name} for user: {user_id}")
+        voice_info = voice_manager.download_custom_voice(user_id, character_name)
         
         if voice_info and os.path.exists(voice_info['audio_path']) and os.path.exists(voice_info['text_path']):
             logger.info(f"✅ Successfully downloaded custom voice: {character_name}")

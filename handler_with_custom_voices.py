@@ -200,7 +200,7 @@ def build_generation_command(validated_input: Dict[str, Any], temp_files: Dict[s
     
     return cmd
 
-def run_generation(cmd: list) -> tuple:
+def run_generation(cmd: list, user_id: str = None) -> tuple:
     """Run the generation.py command and return success status and output"""
     try:
         # Set environment variables for caching
@@ -211,6 +211,11 @@ def run_generation(cmd: list) -> tuple:
             "HF_DATASETS_CACHE": "/runpod-volume/.huggingface/datasets",
             "TORCH_HOME": "/runpod-volume/.torch"
         })
+        
+        # Add user_id for custom voice resolution if provided
+        if user_id:
+            env["HIGGS_USER_ID"] = user_id
+            logger.info(f"Setting HIGGS_USER_ID environment variable: {user_id}")
         
         logger.info(f"Running command: {' '.join(cmd)}")
         
@@ -364,7 +369,7 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         cmd = build_generation_command(validated_input, temp_files)
         
         # Run generation
-        success, output = run_generation(cmd)
+        success, output = run_generation(cmd, validated_input["user_id"])
         
         if not success:
             return {
