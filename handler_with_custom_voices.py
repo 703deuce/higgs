@@ -177,6 +177,11 @@ def build_generation_command(validated_input: Dict[str, Any], temp_files: Dict[s
     if validated_input["seed"] is not None:
         cmd.extend(["--seed", str(validated_input["seed"])])
     
+    # Add user_id if provided (for custom voices)
+    if validated_input.get("user_id"):
+        cmd.extend(["--user_id", validated_input["user_id"]])
+        logger.info(f"🔍 Debug: Added --user_id {validated_input['user_id']} to command")
+    
     # Add scene prompt if provided
     if validated_input["scene_description"]:
         cmd.extend(["--scene_prompt", temp_files['scene']])
@@ -211,11 +216,6 @@ def run_generation(cmd: list, user_id: str = None) -> tuple:
             "HF_DATASETS_CACHE": "/runpod-volume/.huggingface/datasets",
             "TORCH_HOME": "/runpod-volume/.torch"
         })
-        
-        # Add user_id for custom voice resolution if provided
-        if user_id:
-            env["HIGGS_USER_ID"] = user_id
-            logger.info(f"Setting HIGGS_USER_ID environment variable: {user_id}")
         
         logger.info(f"Running command: {' '.join(cmd)}")
         
@@ -293,14 +293,14 @@ def encode_audio_output(output_path: str, output_format: str) -> Dict[str, Any]:
 def check_cache_status() -> Dict[str, Any]:
     """Check the status of cached models"""
     cache_info = {
-        "cache_directory": "/runpod-volume/.huggingface",
-        "cache_exists": os.path.exists("/runpod-volume/.huggingface"),
-        "transformers_cache_exists": os.path.exists("/runpod-volume/.huggingface/transformers"),
+        "cache_directory": "/runpod-volume/temp_voices",
+        "cache_exists": os.path.exists("/runpod-volume/temp_voices"),
+        "transformers_cache_exists": os.path.exists("/runpod-volume/temp_voices/transformers"),
         "models_cached": [],
         "all_cached_items": []
     }
     
-    transformers_cache_dir = "/runpod-volume/.huggingface/transformers"
+    transformers_cache_dir = "/runpod-volume/temp_voices/transformers"
     if os.path.exists(transformers_cache_dir):
         try:
             cached_items = os.listdir(transformers_cache_dir)
@@ -369,6 +369,9 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
         cmd = build_generation_command(validated_input, temp_files)
         
         # Run generation
+        logger.info(f"🔍 Debug: user_id from validated_input: {validated_input.get('user_id')}")
+        logger.info(f"🔍 Debug: ref_audio_name from validated_input: {validated_input.get('ref_audio_name')}")
+        logger.info(f"🔍 Debug: About to call run_generation with user_id: {validated_input.get('user_id')}")
         success, output = run_generation(cmd, validated_input["user_id"])
         
         if not success:

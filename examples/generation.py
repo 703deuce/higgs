@@ -41,7 +41,7 @@ If the user's message includes a [SPEAKER*] tag, do not read out the tag and gen
 If no speaker tag is present, select a suitable voice on your own."""
 
 
-def resolve_voice_paths(character_name, base_dir=None):
+def resolve_voice_paths(character_name, base_dir=None, user_id=None):
     """
     SMART voice path resolver that automatically handles both regular and custom voices:
     1. Normal voice_prompts folder (built-in voices) - PRIMARY LOCATION
@@ -92,14 +92,13 @@ def resolve_voice_paths(character_name, base_dir=None):
         
         voice_manager = VoiceManager(firebase_config)
         
-        # Get user_id from environment variable (set by handler)
-        user_id = os.environ.get("HIGGS_USER_ID")
+        # Use user_id parameter instead of environment variable
         if not user_id:
-            logger.warning(f"⚠️ No HIGGS_USER_ID environment variable found for custom voice: {character_name}")
+            logger.warning(f"⚠️ No user_id provided for custom voice: {character_name}")
             # Fallback to original paths for normal error handling
             return normal_audio_path, normal_text_path
         
-        # Try to download the custom voice using the actual user_id
+        # Try to download the custom voice using the provided user_id
         logger.info(f"🔽 Attempting to download custom voice from Firebase: {character_name} for user: {user_id}")
         voice_info = voice_manager.download_custom_voice(user_id, character_name)
         
@@ -461,7 +460,7 @@ class HiggsAudioModelClient:
         return concat_wv, sr, text_result
 
 
-def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_message, audio_tokenizer, speaker_tags):
+def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_message, audio_tokenizer, speaker_tags, user_id=None):
     """Prepare the context for generation.
 
     The context contains the system message, user message, assistant message, and audio prompt if any.
@@ -509,7 +508,7 @@ def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_mess
         voice_profile = None
         for spk_id, character_name in enumerate(ref_audio.split(",")):
             if not character_name.startswith("profile:"):
-                prompt_audio_path, prompt_text_path = resolve_voice_paths(character_name)
+                prompt_audio_path, prompt_text_path = resolve_voice_paths(character_name, base_dir=CURR_DIR, user_id=user_id)
                 assert os.path.exists(prompt_audio_path), (
                     f"Voice prompt audio file {prompt_audio_path} does not exist."
                 )
@@ -682,6 +681,12 @@ def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_mess
     help="The device to run the model on.",
 )
 @click.option(
+    "--user_id",
+    type=str,
+    default=None,
+    help="User ID for custom voice resolution"
+)
+@click.option(
     "--out_path",
     type=str,
     default="generation.wav",
@@ -720,6 +725,7 @@ def main(
     out_path,
     use_static_kv_cache,
     device,
+    user_id,
 ):
     # specifying a device_id implies CUDA
     if device_id is None:
@@ -809,6 +815,7 @@ def main(
         ref_audio_in_system_message=ref_audio_in_system_message,
         audio_tokenizer=audio_tokenizer,
         speaker_tags=speaker_tags,
+        user_id=user_id,
     )
     chunked_text = prepare_chunk_text(
         transcript,
