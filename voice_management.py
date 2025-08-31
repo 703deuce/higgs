@@ -28,14 +28,14 @@ class VoiceManager:
         Download a custom voice from Firebase Storage
         
         Args:
-            user_id: User ID (e.g., 'anonymous')
+            user_id: User ID (e.g., 'krxbH4KpoYTWaZKIKIDIzkJx62')
             voice_name: Voice name (e.g., 'cloned_1756205093378_bzbfy4n4x_Maya_Pop_Culture_Queen')
         
         Returns:
             Dict with 'audio_path' and 'text_path' if successful, None if failed
         """
         try:
-            # Firebase Storage paths - Firebase Storage doesn't use leading slashes
+            # Firebase Storage paths - use user-specific folder structure
             audio_path = f"user_voices/{user_id}/{voice_name}.wav"
             text_path = f"user_voices/{user_id}/{voice_name}.txt"
             
@@ -44,6 +44,7 @@ class VoiceManager:
             local_text_path = os.path.join(self.temp_voices_dir, f"{voice_name}.txt")
             
             print(f"🔽 Downloading custom voice: {voice_name}")
+            print(f"   User ID: {user_id}")
             print(f"   Audio: {audio_path}")
             print(f"   Text: {text_path}")
             
@@ -78,6 +79,7 @@ class VoiceManager:
             text_size = os.path.getsize(local_text_path)
             
             print(f"✅ Custom voice downloaded successfully!")
+            print(f"   User ID: {user_id}")
             print(f"   Audio: {local_audio_path} ({audio_size:,} bytes)")
             print(f"   Text: {local_text_path} ({text_size:,} bytes)")
             
@@ -126,20 +128,23 @@ class VoiceManager:
         # If it's not in voice_prompts, it's a custom voice
         return not os.path.exists(regular_voice_path)
     
-    def get_voice_paths(self, voice_name: str, user_id: str = "anonymous") -> Tuple[str, str]:
+    def get_voice_paths(self, voice_name: str, user_id: str = None) -> Tuple[str, str]:
         """
         Get voice audio and text paths, downloading from Firebase if needed
         
         Args:
             voice_name: Name of the voice
-            user_id: User ID for custom voices
+            user_id: User ID for custom voices (required if voice_name starts with 'cloned_')
         
         Returns:
             Tuple of (audio_path, text_path)
         """
         if self.is_custom_voice(voice_name):
-            print(f"🎤 Using custom voice: {voice_name}")
-            # Download from Firebase
+            if not user_id:
+                raise ValueError(f"user_id is required for custom voice: {voice_name}")
+            
+            print(f"🎤 Using custom voice: {voice_name} for user: {user_id}")
+            # Download from Firebase using user-specific folder
             voice_info = self.download_custom_voice(user_id, voice_name)
             if voice_info:
                 return voice_info['audio_path'], voice_info['text_path']

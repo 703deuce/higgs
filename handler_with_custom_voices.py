@@ -35,6 +35,12 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
     if "text" not in input_data:
         raise ValueError("Missing 'text' field in input")
     
+    # Check if user_id is required (only for custom voices)
+    ref_audio_name = input_data.get("ref_audio_name")
+    if ref_audio_name and ref_audio_name.startswith("cloned_"):
+        if "user_id" not in input_data:
+            raise ValueError("user_id is required for custom voices (cloned_*)")
+    
     # Map API parameters to generation.py arguments
     validated_input = {
         "text": input_data["text"],
@@ -50,7 +56,7 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
         # Reference audio for voice cloning
         "ref_audio_base64": input_data.get("ref_audio_base64", None),
         "ref_audio_text": input_data.get("ref_audio_text", None),
-        "ref_audio_name": input_data.get("ref_audio_name", None),
+        "ref_audio_name": ref_audio_name,
         
         # Custom voice support
         "custom_voice_id": input_data.get("custom_voice_id", None),
@@ -89,29 +95,36 @@ def create_temp_files(validated_input: Dict[str, Any]) -> Dict[str, str]:
     # Handle reference audio with custom voice support
     ref_audio_name = None
     
-    # Priority 1: Custom voice from Firebase
-    if validated_input["custom_voice_id"] and validated_input["user_id"]:
+    # Priority 1: Custom voice from Firebase (requires user_id)
+    if validated_input["ref_audio_name"] and validated_input["ref_audio_name"].startswith("cloned_"):
+        if not validated_input["user_id"]:
+            raise ValueError("user_id is required for custom voices (cloned_*)")
+        
         try:
-            voice_info = voice_manager.download_voice_for_generation(
-                validated_input["custom_voice_id"]
+            # Use voice manager to download custom voice
+            voice_info = voice_manager.download_custom_voice(
+                validated_input["user_id"],
+                validated_input["ref_audio_name"]
             )
             if voice_info:
                 ref_audio_name = voice_info['voice_name']
                 temp_files['custom_voice'] = voice_info
                 temp_files['needs_cleanup'] = True
-                logger.info(f"Using custom voice: {ref_audio_name}")
+                logger.info(f"Using custom voice: {ref_audio_name} for user: {validated_input['user_id']}")
             else:
-                logger.warning(f"Failed to download custom voice: {validated_input['custom_voice_id']}")
+                logger.warning(f"Failed to download custom voice: {validated_input['ref_audio_name']}")
+                raise ValueError(f"Failed to download custom voice: {validated_input['ref_audio_name']}")
         except Exception as e:
             logger.error(f"Error with custom voice: {e}")
+            raise
     
-    # Priority 2: Use existing voice sample by name
-    if not ref_audio_name and validated_input["ref_audio_name"]:
+    # Priority 2: Use existing voice sample by name (regular voices)
+    elif validated_input["ref_audio_name"]:
         ref_audio_name = validated_input["ref_audio_name"]
-        logger.info(f"Using existing voice sample: {ref_audio_name}")
+        logger.info(f"Using regular voice sample: {ref_audio_name}")
     
     # Priority 3: Create temporary voice sample from base64
-    elif not ref_audio_name and validated_input["ref_audio_base64"]:
+    elif validated_input["ref_audio_base64"]:
         # Decode base64 audio
         audio_data = base64.b64decode(validated_input["ref_audio_base64"])
         
