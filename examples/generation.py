@@ -132,6 +132,34 @@ def calculate_content_complexity(sentence: str, nlp) -> float:
         logger.warning(f"Error calculating content complexity: {e}")
         return len(sentence.split())
 
+def validate_chunk_order_preservation(original_text: str, chunks: List[str]) -> bool:
+    """Validate that chunks preserve the original text order"""
+    try:
+        # Reconstruct text from chunks (remove extra spaces)
+        reconstructed = " ".join(chunks)
+        original_clean = " ".join(original_text.split())
+        
+        # Check if all original words appear in the same order
+        original_words = original_clean.split()
+        reconstructed_words = reconstructed.split()
+        
+        if len(original_words) != len(reconstructed_words):
+            logger.warning(f"Word count mismatch: original={len(original_words)}, reconstructed={len(reconstructed_words)}")
+            return False
+        
+        # Check word order preservation
+        for i, (orig_word, recon_word) in enumerate(zip(original_words, reconstructed_words)):
+            if orig_word.lower() != recon_word.lower():
+                logger.warning(f"Word order violation at position {i}: '{orig_word}' vs '{recon_word}'")
+                return False
+        
+        logger.info("✅ Chunk order preservation validated successfully")
+        return True
+        
+    except Exception as e:
+        logger.warning(f"Error validating chunk order: {e}")
+        return False
+
 
 MULTISPEAKER_DEFAULT_SYSTEM_MESSAGE = """You are an AI assistant designed to convert text into speech.
 If the user's message includes a [SPEAKER*] tag, do not read out the tag and generate speech for the following text, using the specified voice.
@@ -378,6 +406,7 @@ def prepare_chunk_text(
         return chunks
     elif chunk_method == "semantic":
         # Advanced semantic-aware chunking for professional SaaS
+        # CRITICAL: Preserves exact input order while grouping adjacent similar sentences
         ensure_nltk_data()
         from nltk.tokenize import sent_tokenize
         
@@ -403,10 +432,10 @@ def prepare_chunk_text(
                 chunks.append(paragraph.strip())
                 continue
             
-            # Calculate semantic similarity matrix
+            # Calculate semantic similarity matrix for adjacent sentences only
             similarity_matrix = calculate_semantic_similarity(sentences, sentence_model)
             
-            # Group semantically similar sentences
+            # Sequential processing with order preservation guarantee
             current_chunk = ""
             current_sentences = []
             
@@ -414,7 +443,7 @@ def prepare_chunk_text(
                 if not sentence.strip():
                     continue
                 
-                # Check if we should start a new chunk
+                # ORDER PRESERVATION: Always process sentences in sequence
                 should_start_new = False
                 
                 if current_sentences:
@@ -423,25 +452,34 @@ def prepare_chunk_text(
                     if len(test_chunk.split()) > chunk_max_word_num:
                         should_start_new = True
                     
-                    # Check semantic similarity with previous sentence
+                    # Check semantic similarity with IMMEDIATELY PREVIOUS sentence only
+                    # This ensures we only group adjacent sentences, never rearrange
                     if i > 0 and similarity_matrix[i-1][i] < 0.3:  # Low similarity threshold
                         should_start_new = True
                 
                 if should_start_new and current_chunk:
+                    # Save current chunk and start new one
                     chunks.append(current_chunk.strip())
                     current_chunk = sentence
                     current_sentences = [sentence]
                 else:
+                    # Add sentence to current chunk (maintains order)
                     current_chunk = current_chunk + " " + sentence if current_chunk else sentence
                     current_sentences.append(sentence)
             
+            # Add final chunk
             if current_chunk:
                 chunks.append(current_chunk.strip())
         
         if not chunks:
             chunks = [text]
+        
+        # Validate order preservation for semantic chunking
+        if not validate_chunk_order_preservation(text, chunks):
+            logger.warning("⚠️ Order preservation validation failed - falling back to sentence chunking")
+            return prepare_chunk_text(text, "sentence", chunk_max_word_num, chunk_max_num_turns)
             
-        logger.info(f"Created {len(chunks)} semantic-aware chunks")
+        logger.info(f"Created {len(chunks)} semantic-aware chunks (order preserved)")
         return chunks
     elif chunk_method == "adaptive":
         # Adaptive chunking based on content complexity
