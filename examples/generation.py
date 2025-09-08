@@ -45,9 +45,17 @@ AUDIO_PLACEHOLDER_TOKEN = "<|__AUDIO_PLACEHOLDER__|>"
 def ensure_nltk_data():
     """Ensure NLTK data is downloaded for sentence tokenization"""
     try:
+        nltk.data.find('tokenizers/punkt_tab')
+    except LookupError:
+        logger.info("Downloading NLTK punkt_tab tokenizer...")
+        nltk.download('punkt_tab', quiet=True)
+        logger.info("NLTK punkt_tab tokenizer downloaded successfully")
+    
+    # Also ensure the legacy punkt is available for compatibility
+    try:
         nltk.data.find('tokenizers/punkt')
     except LookupError:
-        logger.info("Downloading NLTK punkt tokenizer...")
+        logger.info("Downloading NLTK punkt tokenizer (legacy)...")
         nltk.download('punkt', quiet=True)
         logger.info("NLTK punkt tokenizer downloaded successfully")
 
@@ -356,8 +364,13 @@ def prepare_chunk_text(
         return chunks
     elif chunk_method == "sentence":
         # Basic sentence-based chunking for better prosody and reduced hallucination
-        ensure_nltk_data()
-        from nltk.tokenize import sent_tokenize
+        try:
+            ensure_nltk_data()
+            from nltk.tokenize import sent_tokenize
+        except Exception as e:
+            logger.warning(f"NLTK setup failed for sentence chunking: {e}")
+            logger.info("Falling back to word chunking...")
+            return prepare_chunk_text(text, "word", chunk_max_word_num, chunk_max_num_turns)
         
         language = langid.classify(text)[0]
         paragraphs = text.split("\n\n")
@@ -407,8 +420,13 @@ def prepare_chunk_text(
     elif chunk_method == "semantic":
         # Advanced semantic-aware chunking for professional SaaS
         # CRITICAL: Preserves exact input order while grouping adjacent similar sentences
-        ensure_nltk_data()
-        from nltk.tokenize import sent_tokenize
+        try:
+            ensure_nltk_data()
+            from nltk.tokenize import sent_tokenize
+        except Exception as e:
+            logger.warning(f"NLTK setup failed for semantic chunking: {e}")
+            logger.info("Falling back to sentence chunking...")
+            return prepare_chunk_text(text, "sentence", chunk_max_word_num, chunk_max_num_turns)
         
         language = langid.classify(text)[0]
         paragraphs = text.split("\n\n")
@@ -483,8 +501,13 @@ def prepare_chunk_text(
         return chunks
     elif chunk_method == "adaptive":
         # Adaptive chunking based on content complexity
-        ensure_nltk_data()
-        from nltk.tokenize import sent_tokenize
+        try:
+            ensure_nltk_data()
+            from nltk.tokenize import sent_tokenize
+        except Exception as e:
+            logger.warning(f"NLTK setup failed for adaptive chunking: {e}")
+            logger.info("Falling back to sentence chunking...")
+            return prepare_chunk_text(text, "sentence", chunk_max_word_num, chunk_max_num_turns)
         
         language = langid.classify(text)[0]
         paragraphs = text.split("\n\n")
@@ -541,8 +564,13 @@ def prepare_chunk_text(
         return chunks
     elif chunk_method == "clause":
         # Clause-based chunking for finer prosody control
-        ensure_nltk_data()
-        from nltk.tokenize import sent_tokenize
+        try:
+            ensure_nltk_data()
+            from nltk.tokenize import sent_tokenize
+        except Exception as e:
+            logger.warning(f"NLTK setup failed for clause chunking: {e}")
+            logger.info("Falling back to sentence chunking...")
+            return prepare_chunk_text(text, "sentence", chunk_max_word_num, chunk_max_num_turns)
         
         language = langid.classify(text)[0]
         paragraphs = text.split("\n\n")
