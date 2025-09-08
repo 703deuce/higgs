@@ -10,6 +10,7 @@ import copy
 import torchaudio
 import tqdm
 import yaml
+import nltk
 
 from loguru import logger
 from boson_multimodal.serve.serve_engine import HiggsAudioServeEngine, HiggsAudioResponse
@@ -34,6 +35,16 @@ CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 AUDIO_PLACEHOLDER_TOKEN = "<|__AUDIO_PLACEHOLDER__|>"
+
+
+def ensure_nltk_data():
+    """Ensure NLTK data is downloaded for sentence tokenization"""
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        logger.info("Downloading NLTK punkt tokenizer...")
+        nltk.download('punkt', quiet=True)
+        logger.info("NLTK punkt tokenizer downloaded successfully")
 
 
 MULTISPEAKER_DEFAULT_SYSTEM_MESSAGE = """You are an AI assistant designed to convert text into speech.
@@ -166,13 +177,13 @@ def prepare_chunk_text(
     text : str
         The text to be chunked.
     chunk_method : str, optional
-        The method to use for chunking. Options are "speaker", "word", or None. By default, we won't use any chunking and
+        The method to use for chunking. Options are "speaker", "word", "sentence", or None. By default, we won't use any chunking and
         will feed the whole text to the model.
     replace_speaker_tag_with_special_tags : bool, optional
         Whether to replace speaker tags with special tokens, by default False
         If the flag is set to True, we will replace [SPEAKER0] with <|speaker_id_start|>SPEAKER0<|speaker_id_end|>
     chunk_max_word_num : int, optional
-        The maximum number of words for each chunk when "word" chunking method is used, by default 100
+        The maximum number of words for each chunk when "word" or "sentence" chunking method is used, by default 100
     chunk_max_num_turns : int, optional
         The maximum number of turns for each chunk when "speaker" chunking method is used,
 
@@ -228,6 +239,56 @@ def prepare_chunk_text(
                     chunk = " ".join(words[i : i + chunk_max_word_num])
                     chunks.append(chunk)
             chunks[-1] += "\n\n"
+        return chunks
+    elif chunk_method == "sentence":
+        # Sentence-based chunking for better prosody and reduced hallucination
+        ensure_nltk_data()
+        from nltk.tokenize import sent_tokenize
+        
+        language = langid.classify(text)[0]
+        paragraphs = text.split("\n\n")
+        chunks = []
+        
+        for paragraph in paragraphs:
+            if not paragraph.strip():
+                continue
+                
+            if language == "zh":
+                # For Chinese, use jieba for sentence segmentation
+                # Simple approach: split by common Chinese sentence endings
+                sentences = re.split(r'[。！？]', paragraph)
+                sentences = [s.strip() for s in sentences if s.strip()]
+            else:
+                # For English and other languages, use NLTK sentence tokenizer
+                sentences = sent_tokenize(paragraph)
+            
+            # Combine sentences into chunks while respecting word limits
+            current_chunk = ""
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+                    
+                # Check if adding this sentence would exceed the word limit
+                test_chunk = current_chunk + " " + sentence if current_chunk else sentence
+                word_count = len(test_chunk.split())
+                
+                if word_count <= chunk_max_word_num:
+                    current_chunk = test_chunk
+                else:
+                    # If current chunk has content, save it and start new chunk
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+            
+            # Add the last chunk if it has content
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+        
+        # Ensure we have at least one chunk
+        if not chunks:
+            chunks = [text]
+            
+        logger.info(f"Created {len(chunks)} sentence-based chunks")
         return chunks
     else:
         raise ValueError(f"Unknown chunk method: {chunk_method}")
@@ -647,14 +708,14 @@ def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_mess
 @click.option(
     "--chunk_method",
     default=None,
-    type=click.Choice([None, "speaker", "word"]),
-    help="The method to use for chunking the prompt text. Options are 'speaker', 'word', or None. By default, we won't use any chunking and will feed the whole text to the model.",
+    type=click.Choice([None, "speaker", "word", "sentence"]),
+    help="The method to use for chunking the prompt text. Options are 'speaker', 'word', 'sentence', or None. By default, we won't use any chunking and will feed the whole text to the model.",
 )
 @click.option(
     "--chunk_max_word_num",
     default=200,
     type=int,
-    help="The maximum number of words for each chunk when 'word' chunking method is used. Only used when --chunk_method is set to 'word'.",
+    help="The maximum number of words for each chunk when 'word' or 'sentence' chunking method is used. Only used when --chunk_method is set to 'word' or 'sentence'.",
 )
 @click.option(
     "--chunk_max_num_turns",

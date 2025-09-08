@@ -19,6 +19,7 @@ click
 langid
 jieba
 accelerate>=0.26.0
+nltk
 
 # Additional serverless dependencies
 runpod>=1.6.0
