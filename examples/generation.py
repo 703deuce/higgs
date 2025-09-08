@@ -11,6 +11,11 @@ import torchaudio
 import tqdm
 import yaml
 import nltk
+import spacy
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from typing import List, Tuple, Dict, Optional
 
 from loguru import logger
 from boson_multimodal.serve.serve_engine import HiggsAudioServeEngine, HiggsAudioResponse
@@ -45,6 +50,87 @@ def ensure_nltk_data():
         logger.info("Downloading NLTK punkt tokenizer...")
         nltk.download('punkt', quiet=True)
         logger.info("NLTK punkt tokenizer downloaded successfully")
+
+def ensure_spacy_model():
+    """Ensure spaCy English model is downloaded"""
+    try:
+        import spacy
+        nlp = spacy.load("en_core_web_sm")
+        return nlp
+    except OSError:
+        logger.info("Downloading spaCy English model...")
+        import subprocess
+        subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"], check=True)
+        nlp = spacy.load("en_core_web_sm")
+        logger.info("spaCy English model downloaded successfully")
+        return nlp
+
+def get_sentence_transformer():
+    """Get sentence transformer model for semantic analysis"""
+    try:
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        return model
+    except Exception as e:
+        logger.warning(f"Could not load sentence transformer: {e}")
+        return None
+
+def calculate_semantic_similarity(sentences: List[str], model) -> np.ndarray:
+    """Calculate semantic similarity matrix between sentences"""
+    if model is None:
+        return np.eye(len(sentences))  # Return identity matrix if no model
+    
+    try:
+        embeddings = model.encode(sentences)
+        similarity_matrix = cosine_similarity(embeddings)
+        return similarity_matrix
+    except Exception as e:
+        logger.warning(f"Error calculating semantic similarity: {e}")
+        return np.eye(len(sentences))
+
+def detect_clause_boundaries(text: str, nlp) -> List[int]:
+    """Detect clause boundaries using spaCy dependency parsing"""
+    if nlp is None:
+        # Fallback to simple punctuation-based detection
+        boundaries = []
+        for i, char in enumerate(text):
+            if char in ',;':
+                boundaries.append(i)
+        return boundaries
+    
+    try:
+        doc = nlp(text)
+        boundaries = []
+        for token in doc:
+            # Detect clause boundaries based on dependency parsing
+            if token.dep_ in ['cc', 'punct'] and token.text in ',;':
+                boundaries.append(token.idx)
+        return boundaries
+    except Exception as e:
+        logger.warning(f"Error in clause boundary detection: {e}")
+        return []
+
+def calculate_content_complexity(sentence: str, nlp) -> float:
+    """Calculate content complexity score for adaptive chunking"""
+    if nlp is None:
+        # Simple fallback: word count and punctuation
+        word_count = len(sentence.split())
+        punct_count = sum(1 for c in sentence if c in '.,;:!?')
+        return word_count + punct_count * 0.5
+    
+    try:
+        doc = nlp(sentence)
+        complexity_score = 0
+        
+        # Factors that increase complexity
+        complexity_score += len(doc)  # Word count
+        complexity_score += len([t for t in doc if t.dep_ in ['nsubj', 'dobj', 'pobj']]) * 0.5  # Arguments
+        complexity_score += len([t for t in doc if t.pos_ in ['ADJ', 'ADV']]) * 0.3  # Modifiers
+        complexity_score += len([t for t in doc if t.dep_ == 'cc']) * 0.4  # Conjunctions
+        
+        return complexity_score
+    except Exception as e:
+        logger.warning(f"Error calculating content complexity: {e}")
+        return len(sentence.split())
 
 
 MULTISPEAKER_DEFAULT_SYSTEM_MESSAGE = """You are an AI assistant designed to convert text into speech.
@@ -177,13 +263,13 @@ def prepare_chunk_text(
     text : str
         The text to be chunked.
     chunk_method : str, optional
-        The method to use for chunking. Options are "speaker", "word", "sentence", or None. By default, we won't use any chunking and
-        will feed the whole text to the model.
+        The method to use for chunking. Options are "speaker", "word", "sentence", "semantic", "adaptive", "clause", or None. 
+        For professional SaaS applications, "semantic" or "adaptive" are recommended for best quality.
     replace_speaker_tag_with_special_tags : bool, optional
         Whether to replace speaker tags with special tokens, by default False
         If the flag is set to True, we will replace [SPEAKER0] with <|speaker_id_start|>SPEAKER0<|speaker_id_end|>
     chunk_max_word_num : int, optional
-        The maximum number of words for each chunk when "word" or "sentence" chunking method is used, by default 100
+        The maximum number of words for each chunk. Used as base limit for all methods, with adaptive methods adjusting based on content complexity, by default 100
     chunk_max_num_turns : int, optional
         The maximum number of turns for each chunk when "speaker" chunking method is used,
 
@@ -241,7 +327,7 @@ def prepare_chunk_text(
             chunks[-1] += "\n\n"
         return chunks
     elif chunk_method == "sentence":
-        # Sentence-based chunking for better prosody and reduced hallucination
+        # Basic sentence-based chunking for better prosody and reduced hallucination
         ensure_nltk_data()
         from nltk.tokenize import sent_tokenize
         
@@ -289,6 +375,195 @@ def prepare_chunk_text(
             chunks = [text]
             
         logger.info(f"Created {len(chunks)} sentence-based chunks")
+        return chunks
+    elif chunk_method == "semantic":
+        # Advanced semantic-aware chunking for professional SaaS
+        ensure_nltk_data()
+        from nltk.tokenize import sent_tokenize
+        
+        language = langid.classify(text)[0]
+        paragraphs = text.split("\n\n")
+        chunks = []
+        
+        # Initialize NLP models
+        nlp = ensure_spacy_model() if language != "zh" else None
+        sentence_model = get_sentence_transformer()
+        
+        for paragraph in paragraphs:
+            if not paragraph.strip():
+                continue
+                
+            if language == "zh":
+                sentences = re.split(r'[。！？]', paragraph)
+                sentences = [s.strip() for s in sentences if s.strip()]
+            else:
+                sentences = sent_tokenize(paragraph)
+            
+            if len(sentences) <= 1:
+                chunks.append(paragraph.strip())
+                continue
+            
+            # Calculate semantic similarity matrix
+            similarity_matrix = calculate_semantic_similarity(sentences, sentence_model)
+            
+            # Group semantically similar sentences
+            current_chunk = ""
+            current_sentences = []
+            
+            for i, sentence in enumerate(sentences):
+                if not sentence.strip():
+                    continue
+                
+                # Check if we should start a new chunk
+                should_start_new = False
+                
+                if current_sentences:
+                    # Check word limit
+                    test_chunk = current_chunk + " " + sentence if current_chunk else sentence
+                    if len(test_chunk.split()) > chunk_max_word_num:
+                        should_start_new = True
+                    
+                    # Check semantic similarity with previous sentence
+                    if i > 0 and similarity_matrix[i-1][i] < 0.3:  # Low similarity threshold
+                        should_start_new = True
+                
+                if should_start_new and current_chunk:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+                    current_sentences = [sentence]
+                else:
+                    current_chunk = current_chunk + " " + sentence if current_chunk else sentence
+                    current_sentences.append(sentence)
+            
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+        
+        if not chunks:
+            chunks = [text]
+            
+        logger.info(f"Created {len(chunks)} semantic-aware chunks")
+        return chunks
+    elif chunk_method == "adaptive":
+        # Adaptive chunking based on content complexity
+        ensure_nltk_data()
+        from nltk.tokenize import sent_tokenize
+        
+        language = langid.classify(text)[0]
+        paragraphs = text.split("\n\n")
+        chunks = []
+        
+        nlp = ensure_spacy_model() if language != "zh" else None
+        
+        for paragraph in paragraphs:
+            if not paragraph.strip():
+                continue
+                
+            if language == "zh":
+                sentences = re.split(r'[。！？]', paragraph)
+                sentences = [s.strip() for s in sentences if s.strip()]
+            else:
+                sentences = sent_tokenize(paragraph)
+            
+            current_chunk = ""
+            current_complexity = 0
+            
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+                
+                # Calculate sentence complexity
+                sentence_complexity = calculate_content_complexity(sentence, nlp)
+                
+                # Adaptive word limit based on complexity
+                adaptive_limit = chunk_max_word_num
+                if sentence_complexity > 15:  # High complexity
+                    adaptive_limit = int(chunk_max_word_num * 0.7)  # Smaller chunks
+                elif sentence_complexity < 8:  # Low complexity
+                    adaptive_limit = int(chunk_max_word_num * 1.3)  # Larger chunks
+                
+                test_chunk = current_chunk + " " + sentence if current_chunk else sentence
+                word_count = len(test_chunk.split())
+                
+                if word_count <= adaptive_limit and current_complexity + sentence_complexity <= 25:
+                    current_chunk = test_chunk
+                    current_complexity += sentence_complexity
+                else:
+                    if current_chunk:
+                        chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+                    current_complexity = sentence_complexity
+            
+            if current_chunk:
+                chunks.append(current_chunk.strip())
+        
+        if not chunks:
+            chunks = [text]
+            
+        logger.info(f"Created {len(chunks)} adaptive chunks")
+        return chunks
+    elif chunk_method == "clause":
+        # Clause-based chunking for finer prosody control
+        ensure_nltk_data()
+        from nltk.tokenize import sent_tokenize
+        
+        language = langid.classify(text)[0]
+        paragraphs = text.split("\n\n")
+        chunks = []
+        
+        nlp = ensure_spacy_model() if language != "zh" else None
+        
+        for paragraph in paragraphs:
+            if not paragraph.strip():
+                continue
+                
+            if language == "zh":
+                sentences = re.split(r'[。！？]', paragraph)
+                sentences = [s.strip() for s in sentences if s.strip()]
+            else:
+                sentences = sent_tokenize(paragraph)
+            
+            for sentence in sentences:
+                if not sentence.strip():
+                    continue
+                
+                # Detect clause boundaries
+                clause_boundaries = detect_clause_boundaries(sentence, nlp)
+                
+                if not clause_boundaries or len(sentence.split()) <= chunk_max_word_num:
+                    # No clause boundaries or sentence is short enough
+                    chunks.append(sentence.strip())
+                else:
+                    # Split at clause boundaries
+                    current_clause = ""
+                    last_boundary = 0
+                    
+                    for boundary in clause_boundaries:
+                        clause = sentence[last_boundary:boundary].strip()
+                        if clause:
+                            test_chunk = current_clause + " " + clause if current_clause else clause
+                            if len(test_chunk.split()) <= chunk_max_word_num:
+                                current_clause = test_chunk
+                            else:
+                                if current_clause:
+                                    chunks.append(current_clause.strip())
+                                current_clause = clause
+                        last_boundary = boundary
+                    
+                    # Add remaining text
+                    remaining = sentence[last_boundary:].strip()
+                    if remaining:
+                        test_chunk = current_clause + " " + remaining if current_clause else remaining
+                        if len(test_chunk.split()) <= chunk_max_word_num:
+                            chunks.append(test_chunk.strip())
+                        else:
+                            if current_clause:
+                                chunks.append(current_chunk.strip())
+                            chunks.append(remaining.strip())
+        
+        if not chunks:
+            chunks = [text]
+            
+        logger.info(f"Created {len(chunks)} clause-based chunks")
         return chunks
     else:
         raise ValueError(f"Unknown chunk method: {chunk_method}")
@@ -708,14 +983,14 @@ def prepare_generation_context(scene_prompt, ref_audio, ref_audio_in_system_mess
 @click.option(
     "--chunk_method",
     default=None,
-    type=click.Choice([None, "speaker", "word", "sentence"]),
-    help="The method to use for chunking the prompt text. Options are 'speaker', 'word', 'sentence', or None. By default, we won't use any chunking and will feed the whole text to the model.",
+    type=click.Choice([None, "speaker", "word", "sentence", "semantic", "adaptive", "clause"]),
+    help="The method to use for chunking the prompt text. Options: 'speaker' (speaker-based), 'word' (word-based), 'sentence' (sentence-based), 'semantic' (semantic-aware), 'adaptive' (complexity-adaptive), 'clause' (clause-based), or None. For professional SaaS, use 'semantic' or 'adaptive'.",
 )
 @click.option(
     "--chunk_max_word_num",
     default=200,
     type=int,
-    help="The maximum number of words for each chunk when 'word' or 'sentence' chunking method is used. Only used when --chunk_method is set to 'word' or 'sentence'.",
+    help="The maximum number of words for each chunk. Used by all chunking methods as a base limit, with adaptive methods adjusting based on content complexity.",
 )
 @click.option(
     "--chunk_max_num_turns",
