@@ -28,13 +28,9 @@ RUN python --version && \
     python -c "import sys; print(f'Python version: {sys.version}'); print(f'Python version info: {sys.version_info}')" && \
     python -c "import torch; print(f'PyTorch version: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}')"
 
-# Remove any existing FlashAttention that may have Python 3.12 binaries
-RUN pip uninstall -y flash-attn flash-attn-2 || true
-
-# FlashAttention is optional - it's a speed optimization, not required for functionality
-# Attempt to install, but don't fail the build if it doesn't work
-# Higgs Audio v2 works fine without it, just slightly slower on very long generations
-RUN pip install flash-attn --no-binary :all: --no-cache-dir || true
+# FlashAttention removed - it was causing build timeouts during compilation
+# Higgs Audio v2 works perfectly without it, just slightly slower on very long generations
+# If you need FlashAttention later, install it separately or use pre-built wheels
 
 # Install the project in development mode
 RUN pip install --no-cache-dir -e . && \
