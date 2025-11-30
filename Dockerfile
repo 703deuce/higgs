@@ -31,9 +31,10 @@ RUN python --version && \
 # Remove any existing FlashAttention that may have Python 3.12 binaries
 RUN pip uninstall -y flash-attn flash-attn-2 || true
 
-# Install FlashAttention from source for this specific Python/PyTorch/CUDA combination
-RUN pip install flash-attn --no-binary :all: --no-cache-dir || \
-    echo "⚠️ FlashAttention installation failed, continuing without it"
+# FlashAttention is optional - it's a speed optimization, not required for functionality
+# Attempt to install, but don't fail the build if it doesn't work
+# Higgs Audio v2 works fine without it, just slightly slower on very long generations
+RUN pip install flash-attn --no-binary :all: --no-cache-dir || true
 
 # Install the project in development mode
 RUN pip install --no-cache-dir -e . && \
