@@ -12,6 +12,7 @@ import tempfile
 import subprocess
 import logging
 import time
+import shutil
 from typing import Dict, Any
 import soundfile as sf
 
@@ -51,8 +52,19 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
     if "text" not in input_data:
         raise ValueError("Missing 'text' field in input")
     
-    # Check if user_id is required (only for custom voices)
+    # Check if user_id is required (only for custom voices by name)
     ref_audio_name = input_data.get("ref_audio_name")
+    ref_audio_firebase_path = input_data.get("ref_audio_firebase_path")
+    
+    # Validate that only one ref_audio method is used
+    ref_audio_methods = [
+        bool(ref_audio_name),
+        bool(ref_audio_firebase_path),
+        bool(input_data.get("ref_audio_base64"))
+    ]
+    if sum(ref_audio_methods) > 1:
+        raise ValueError("Only one of 'ref_audio_name', 'ref_audio_firebase_path', or 'ref_audio_base64' can be provided")
+    
     if ref_audio_name and ref_audio_name.startswith("cloned_"):
         if "user_id" not in input_data:
             raise ValueError("user_id is required for custom voices (cloned_*)")
@@ -73,6 +85,8 @@ def validate_input(event: Dict[str, Any]) -> Dict[str, Any]:
         "ref_audio_base64": input_data.get("ref_audio_base64", None),
         "ref_audio_text": input_data.get("ref_audio_text", None),
         "ref_audio_name": ref_audio_name,  # Allow direct reference to existing voice samples
+        "ref_audio_firebase_path": ref_audio_firebase_path,  # Firebase Storage path or URL
+        "ref_audio_firebase_text_path": input_data.get("ref_audio_firebase_text_path", None),  # Optional text path
         
         # Custom voice support
         "user_id": input_data.get("user_id", None),
@@ -110,12 +124,74 @@ def create_temp_files(validated_input: Dict[str, Any]) -> Dict[str, str]:
     # Handle reference audio
     ref_audio_name = None
     
-    # Option 1: Use existing voice sample by name
-    if validated_input["ref_audio_name"]:
+    # Option 1: Download from Firebase Storage path/URL
+    if validated_input["ref_audio_firebase_path"]:
+        try:
+            # Import voice manager
+            sys.path.append('/app')
+            from voice_management import VoiceManager
+            
+            # Firebase configuration
+            firebase_config = {
+                "apiKey": "AIzaSyASdf98Soi-LtMowVOQMhQvMWWVEP3KoC8",
+                "authDomain": "aitts-d4c6d.firebaseapp.com",
+                "projectId": "aitts-d4c6d",
+                "storageBucket": "aitts-d4c6d.firebasestorage.app",
+                "messagingSenderId": "927299361889",
+                "appId": "1:927299361889:web:13408945d50bda7a2f5e20",
+                "measurementId": "G-P1TK2HHBXR"
+            }
+            
+            voice_manager = VoiceManager(firebase_config)
+            
+            # Download from Firebase path
+            logger.info(f"Downloading voice from Firebase path: {validated_input['ref_audio_firebase_path']}")
+            voice_info = voice_manager.download_from_firebase_path(
+                validated_input["ref_audio_firebase_path"],
+                validated_input.get("ref_audio_firebase_text_path")
+            )
+            
+            if voice_info and os.path.exists(voice_info['audio_path']):
+                ref_audio_name = voice_info['voice_name']
+                
+                # Copy files to voice_prompts directory so generation.py can find them
+                # This is where generation.py expects to find voice samples
+                voice_prompts_dir = "/app/examples/voice_prompts"
+                os.makedirs(voice_prompts_dir, exist_ok=True)
+                
+                final_audio_path = os.path.join(voice_prompts_dir, f"{ref_audio_name}.wav")
+                final_text_path = os.path.join(voice_prompts_dir, f"{ref_audio_name}.txt")
+                
+                # Copy audio file
+                shutil.copy2(voice_info['audio_path'], final_audio_path)
+                temp_files['ref_audio'] = final_audio_path
+                
+                # Copy text file if it exists
+                if os.path.exists(voice_info['text_path']) and os.path.getsize(voice_info['text_path']) > 0:
+                    shutil.copy2(voice_info['text_path'], final_text_path)
+                    temp_files['ref_text'] = final_text_path
+                else:
+                    # Create empty text file as fallback
+                    with open(final_text_path, 'w', encoding='utf-8') as f:
+                        f.write("")
+                    temp_files['ref_text'] = final_text_path
+                
+                logger.info(f"✅ Successfully downloaded and prepared voice from Firebase: {ref_audio_name}")
+            else:
+                raise ValueError(f"Failed to download voice from Firebase path: {validated_input['ref_audio_firebase_path']}")
+                
+        except Exception as e:
+            logger.error(f"Error downloading from Firebase path: {e}")
+            import traceback
+            traceback.print_exc()
+            raise ValueError(f"Failed to download voice from Firebase: {str(e)}")
+    
+    # Option 2: Use existing voice sample by name
+    elif validated_input["ref_audio_name"]:
         ref_audio_name = validated_input["ref_audio_name"]
         logger.info(f"Using existing voice sample: {ref_audio_name}")
     
-    # Option 2: Create temporary voice sample from base64
+    # Option 3: Create temporary voice sample from base64
     elif validated_input["ref_audio_base64"]:
         # Decode base64 audio
         audio_data = base64.b64decode(validated_input["ref_audio_base64"])
@@ -342,8 +418,9 @@ def handler(event: Dict[str, Any]) -> Dict[str, Any]:
     
     Features supported:
     - Regular text-to-speech
-    - Voice cloning (with ref_audio_base64 + ref_audio_text OR ref_audio_name)
-    - Long-form chunking (chunk_method: "word", "speaker")
+    - Voice cloning (with ref_audio_base64 + ref_audio_text OR ref_audio_name OR ref_audio_firebase_path)
+    - Firebase Storage path/URL support for custom voices (ref_audio_firebase_path)
+    - Long-form chunking (chunk_method: "word", "speaker", "sentence", "semantic", "adaptive", "clause")
     - Experimental humming ([humming start/end])
     - Experimental BGM ([music start/end] + ref_audio_in_system_message)
     - Scene-based generation
